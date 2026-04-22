@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @fit/web typecheck)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(pnpm --filter @fit/web build)",
+      "Bash(python -c \"from app import main, config, db; from app.models import user, food, log; from app.routes import auth, users, foods, ingredients, diary; from app.services import tdee, security, compose; print\\('All backend modules import OK'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(pnpm --filter @fit/web dev --port 5180 --host)",
+      "Bash(find /c/Project/fit/apps/web/src -name \"*.js\" -not -path \"*/node_modules/*\" -delete)",
+      "Bash(find /c/Project/fit/apps/web -name \"*.d.ts\" -not -path \"*/node_modules/*\" -not -name \"vite-env.d.ts\" -delete)",
+      "Bash(tasklist)",
+      "Bash(echo \"---exit: $?---\")",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(vercel --version)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Read(//c/Users/asus/**)",
+      "Bash(winget --version)",
+      "Bash(scoop --version)",
+      "Bash(choco --version)",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

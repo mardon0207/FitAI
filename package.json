@@ -1,0 +1,19 @@
+{
+  "name": "fit-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FitAI — oilaviy kaloriya va ovqatlanish tracker",
+  "packageManager": "pnpm@10.33.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "web": "pnpm --filter @fit/web",
+    "api": "pnpm --filter @fit/api"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  }
+}

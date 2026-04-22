@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fit
+      POSTGRES_PASSWORD: fit
+      POSTGRES_DB: fit
+    ports:
+      - "5432:5432"
+    volumes:
+      - fit_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "fit"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: fit-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  fit_pg:

@@ -1,0 +1,165 @@
+:root {
+  --fit-primary: #0EA5E9;
+  --fit-primary-dark: #0284C7;
+  --fit-primary-soft: #E0F2FE;
+  --fit-accent: #F59E0B;
+  --fit-accent-soft: #FEF3C7;
+  --fit-danger: #EF4444;
+  --fit-danger-soft: #FEE2E2;
+
+  --fit-protein: #8B5CF6;
+  --fit-carbs: #F59E0B;
+  --fit-fat: #EC4899;
+
+  --fit-bg: #FAFAF9;
+  --fit-surface: #FFFFFF;
+  --fit-surface-alt: #F5F5F4;
+
+  --fit-text: #0F172A;
+  --fit-text-muted: #64748B;
+  --fit-text-subtle: #94A3B8;
+
+  --fit-border: #E5E7EB;
+  --fit-border-soft: #F1F5F9;
+
+  --fit-shadow-sm: 0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06);
+  --fit-shadow-md: 0 2px 8px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
+  --fit-shadow-lg: 0 8px 32px rgba(15,23,42,0.08), 0 24px 48px rgba(15,23,42,0.08);
+
+  --fit-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --fit-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --fit-bg: #0F172A;
+  --fit-surface: #1E293B;
+  --fit-surface-alt: #0F172A;
+  --fit-text: #F8FAFC;
+  --fit-text-muted: #94A3B8;
+  --fit-text-subtle: #64748B;
+  --fit-border: #334155;
+  --fit-border-soft: #1E293B;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--fit-bg);
+  color: var(--fit-text);
+  font-family: var(--fit-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+input, button, textarea, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Mobile-like viewport wrapper for desktop dev */
+#root {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--fit-bg);
+  box-shadow: 0 0 0 1px var(--fit-border);
+}
+
+@media (min-width: 768px) {
+  #root {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 24px;
+    overflow: hidden;
+    min-height: calc(100vh - 40px);
+  }
+}
+
+/* ═══════ Animations ═══════ */
+
+@keyframes fit-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fit-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fit-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fit-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* Every page wrapper fades in when mounted (use data-fit-page on Phone root) */
+[data-fit-page] {
+  animation: fit-fade-in 260ms cubic-bezier(.2,.7,.3,1) both;
+}
+
+/* Stagger children for a nice list-load feel */
+[data-fit-stagger] > * {
+  animation: fit-slide-up 320ms cubic-bezier(.2,.7,.3,1) both;
+}
+[data-fit-stagger] > *:nth-child(1) { animation-delay: 0ms; }
+[data-fit-stagger] > *:nth-child(2) { animation-delay: 40ms; }
+[data-fit-stagger] > *:nth-child(3) { animation-delay: 80ms; }
+[data-fit-stagger] > *:nth-child(4) { animation-delay: 120ms; }
+[data-fit-stagger] > *:nth-child(5) { animation-delay: 160ms; }
+[data-fit-stagger] > *:nth-child(6) { animation-delay: 200ms; }
+[data-fit-stagger] > *:nth-child(7) { animation-delay: 240ms; }
+[data-fit-stagger] > *:nth-child(8) { animation-delay: 280ms; }
+
+/* Tactile press feedback on every interactive element */
+button, [role="button"], [data-fit-tap] {
+  transition: transform 140ms cubic-bezier(.2,.7,.3,1), box-shadow 140ms, background-color 140ms, border-color 140ms, opacity 140ms;
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):active,
+[role="button"]:active,
+[data-fit-tap]:active {
+  transform: scale(0.97);
+}
+
+/* Card hover lift (desktop only) */
+@media (hover: hover) {
+  [data-fit-card]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(15,23,42,0.08), 0 12px 28px rgba(15,23,42,0.08);
+  }
+}
+
+/* Respect the user's OS preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "_meta": { "version": "0.2.0", "count": 18 },
+  "recipes": [
+    { "slug": "uz_osh", "names": { "uz": "Toshkent oshi", "ru": "Плов ташкентский", "en": "Tashkent plov" }, "emoji": "🍚", "category": "main", "servings": 6, "serving_grams": 300, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 480 }, { "slug": "uz_guruch_devzira", "grams": 600 },
+        { "slug": "uz_sabzi", "grams": 360 }, { "slug": "uz_piyoz", "grams": 180 },
+        { "slug": "uz_kungaboqar_yog", "grams": 120 }, { "slug": "uz_zira", "grams": 10 }
+      ] },
+    { "slug": "uz_manti", "names": { "uz": "Manti", "ru": "Манты", "en": "Manti" }, "emoji": "🥟", "category": "main", "servings": 4, "serving_grams": 250, "default_unit": "piece", "grams_per_unit": 85,
+      "ingredients": [
+        { "slug": "uz_mol_qiyma", "grams": 400 }, { "slug": "uz_piyoz", "grams": 220 },
+        { "slug": "uz_un_bugdoy", "grams": 250 }, { "slug": "uz_tuz", "grams": 8 }
+      ] },
+    { "slug": "uz_somsa_mol", "names": { "uz": "Go'shtli somsa", "ru": "Самса с мясом", "en": "Meat samsa" }, "emoji": "🥪", "category": "snack", "servings": 6, "serving_grams": 120, "default_unit": "piece", "grams_per_unit": 120,
+      "ingredients": [
+        { "slug": "uz_mol_qiyma", "grams": 300 }, { "slug": "uz_piyoz", "grams": 180 },
+        { "slug": "uz_un_bugdoy", "grams": 200 }, { "slug": "uz_sariyog", "grams": 60 }
+      ] },
+    { "slug": "uz_lagmon", "names": { "uz": "Lag'mon", "ru": "Лагман", "en": "Lagman" }, "emoji": "🍜", "category": "main", "servings": 4, "serving_grams": 400, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_mol_goshti", "grams": 300 }, { "slug": "uz_un_bugdoy", "grams": 200 },
+        { "slug": "uz_piyoz", "grams": 120 }, { "slug": "uz_sabzi", "grams": 120 },
+        { "slug": "uz_bulgor_qalampir", "grams": 150 }, { "slug": "uz_pomidor", "grams": 240 },
+        { "slug": "uz_kungaboqar_yog", "grams": 40 }
+      ] },
+    { "slug": "uz_chuchvara", "names": { "uz": "Chuchvara", "ru": "Чучвара", "en": "Chuchvara" }, "emoji": "🥮", "category": "main", "servings": 4, "serving_grams": 280, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_mol_qiyma", "grams": 300 }, { "slug": "uz_piyoz", "grams": 140 },
+        { "slug": "uz_un_bugdoy", "grams": 250 }
+      ] },
+    { "slug": "uz_shashlik", "names": { "uz": "Qo'y shashlik", "ru": "Шашлык", "en": "Shashlik" }, "emoji": "🍢", "category": "main", "servings": 4, "serving_grams": 180, "default_unit": "piece", "grams_per_unit": 180,
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 720 }, { "slug": "uz_piyoz", "grams": 100 },
+        { "slug": "uz_zira", "grams": 4 }
+      ] },
+    { "slug": "uz_dimlama", "names": { "uz": "Dimlama", "ru": "Димлама", "en": "Dimlama" }, "emoji": "🍲", "category": "main", "servings": 5, "serving_grams": 350, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 500 }, { "slug": "uz_kartoshka", "grams": 600 },
+        { "slug": "uz_sabzi", "grams": 300 }, { "slug": "uz_piyoz", "grams": 220 },
+        { "slug": "uz_pomidor", "grams": 240 }, { "slug": "uz_bulgor_qalampir", "grams": 180 }
+      ] },
+    { "slug": "uz_norin", "names": { "uz": "Norin", "ru": "Нарын", "en": "Norin" }, "emoji": "🍜", "category": "main", "servings": 4, "serving_grams": 220, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_mol_goshti", "grams": 400 }, { "slug": "uz_un_bugdoy", "grams": 200 },
+        { "slug": "uz_piyoz", "grams": 100 }
+      ] },
+    { "slug": "uz_mastava", "names": { "uz": "Mastava", "ru": "Мастава", "en": "Mastava" }, "emoji": "🍲", "category": "soup", "servings": 5, "serving_grams": 300, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_mol_goshti", "grams": 300 }, { "slug": "uz_guruch_devzira", "grams": 120 },
+        { "slug": "uz_sabzi", "grams": 120 }, { "slug": "uz_piyoz", "grams": 120 },
+        { "slug": "uz_pomidor", "grams": 180 }, { "slug": "uz_kartoshka", "grams": 200 }
+      ] },
+    { "slug": "uz_shurva", "names": { "uz": "Shurva", "ru": "Шурпа", "en": "Shurva" }, "emoji": "🍲", "category": "soup", "servings": 4, "serving_grams": 400, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 400 }, { "slug": "uz_kartoshka", "grams": 400 },
+        { "slug": "uz_sabzi", "grams": 180 }, { "slug": "uz_piyoz", "grams": 140 },
+        { "slug": "uz_pomidor", "grams": 180 }
+      ] },
+    { "slug": "uz_moshxurda", "names": { "uz": "Moshxo'rda", "ru": "Машхурда", "en": "Moshkhurda" }, "emoji": "🍲", "category": "soup", "servings": 5, "serving_grams": 350, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_masho", "grams": 300 }, { "slug": "uz_guruch_oq", "grams": 100 },
+        { "slug": "uz_mol_goshti", "grams": 300 }, { "slug": "uz_sabzi", "grams": 120 },
+        { "slug": "uz_piyoz", "grams": 100 }
+      ] },
+    { "slug": "uz_qovurdoq", "names": { "uz": "Qovurdoq", "ru": "Ковурдак", "en": "Qovurdoq" }, "emoji": "🥘", "category": "main", "servings": 4, "serving_grams": 250, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 600 }, { "slug": "uz_kartoshka", "grams": 300 },
+        { "slug": "uz_piyoz", "grams": 150 }, { "slug": "uz_kungaboqar_yog", "grams": 30 }
+      ] },
+    { "slug": "uz_achiq_chuchuk", "names": { "uz": "Achchiq-chuchuk salat", "ru": "Ачик-чучук", "en": "Tomato-onion salad" }, "emoji": "🥗", "category": "side", "servings": 4, "serving_grams": 150, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_pomidor", "grams": 400 }, { "slug": "uz_piyoz", "grams": 150 },
+        { "slug": "uz_bulgor_qalampir", "grams": 60 }
+      ] },
+    { "slug": "uz_omlet", "names": { "uz": "Tuxum omlet", "ru": "Омлет", "en": "Omelette" }, "emoji": "🍳", "category": "breakfast", "servings": 1, "serving_grams": 180, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_tuxum", "grams": 100 }, { "slug": "uz_sut", "grams": 50 },
+        { "slug": "uz_sariyog", "grams": 10 }
+      ] },
+    { "slug": "uz_tuxum_qaynatilgan", "names": { "uz": "Qaynatilgan tuxum", "ru": "Варёные яйца", "en": "Boiled egg" }, "emoji": "🥚", "category": "breakfast", "servings": 1, "serving_grams": 50, "default_unit": "piece", "grams_per_unit": 50,
+      "ingredients": [ { "slug": "uz_tuxum", "grams": 50 } ] },
+    { "slug": "uz_nahor_osh", "names": { "uz": "Nahor oshi", "ru": "Нахор ош", "en": "Nahor plov" }, "emoji": "🍚", "category": "breakfast", "servings": 6, "serving_grams": 280, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_qoy_goshti", "grams": 500 }, { "slug": "uz_guruch_devzira", "grams": 600 },
+        { "slug": "uz_sabzi", "grams": 400 }, { "slug": "uz_piyoz", "grams": 200 },
+        { "slug": "uz_kungaboqar_yog", "grams": 100 }, { "slug": "uz_mayiz", "grams": 50 }
+      ] },
+    { "slug": "uz_kabob", "names": { "uz": "Kabob (mol)", "ru": "Кебаб", "en": "Kebab" }, "emoji": "🍢", "category": "main", "servings": 4, "serving_grams": 150, "default_unit": "piece", "grams_per_unit": 150,
+      "ingredients": [
+        { "slug": "uz_mol_qiyma", "grams": 500 }, { "slug": "uz_piyoz", "grams": 80 }, { "slug": "uz_zira", "grams": 3 }
+      ] },
+    { "slug": "uz_sendvich", "names": { "uz": "Tuxumli sendvich", "ru": "Бутерброд с яйцом", "en": "Egg sandwich" }, "emoji": "🥪", "category": "snack", "servings": 1, "serving_grams": 150, "default_unit": "serving",
+      "ingredients": [
+        { "slug": "uz_non_oddiy", "grams": 60 }, { "slug": "uz_tuxum", "grams": 50 },
+        { "slug": "uz_pishloq", "grams": 30 }, { "slug": "uz_pomidor", "grams": 40 }
+      ] }
+  ]
+}

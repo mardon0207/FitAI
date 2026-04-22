@@ -1,0 +1,241 @@
+{
+  "_meta": {
+    "description": "O'zbek milliy ingredientlari — har kungi maxsulotlar. Nutrient qiymatlar USDA ekvivalentlaridan olingan, 100g uchun.",
+    "version": "0.1.0",
+    "source": "USDA FDC + Wikipedia + crowdsourced family data",
+    "notes": "Agar USDA ekvivalenti aniq bo'lsa, 'usda_ref' to'ldiriladi. grams_per_unit tipik og'irliklar.",
+    "seed_count_target": 500,
+    "seed_count_current": 25
+  },
+  "ingredients": [
+    {
+      "slug": "uz_non_obi",
+      "names": { "uz": "Obi non", "ru": "Лепёшка узбекская", "en": "Uzbek flatbread" },
+      "category": "bakery",
+      "emoji": "🍞",
+      "default_unit": "g",
+      "grams_per_unit": 350,
+      "unit_aliases": ["dona", "non"],
+      "per_100g": { "kcal": 275, "protein": 9, "fat": 2, "carbs": 55, "iron": 3.2, "vit_b1": 0.4 }
+    },
+    {
+      "slug": "uz_guruch_devzira",
+      "names": { "uz": "Devzira guruchi (xom)", "ru": "Рис девзира (сырой)", "en": "Devzira rice (raw)" },
+      "category": "grains",
+      "emoji": "🍚",
+      "default_unit": "g",
+      "grams_per_unit": 200,
+      "unit_aliases": ["piyola", "kosa"],
+      "per_100g": { "kcal": 360, "protein": 7, "fat": 0.6, "carbs": 79, "magnesium": 25, "vit_b1": 0.07 }
+    },
+    {
+      "slug": "uz_qoy_goshti",
+      "names": { "uz": "Qo'y go'shti (xom, dumbasi bilan)", "ru": "Баранина (сырое, с курдюком)", "en": "Lamb (raw, with tail fat)" },
+      "category": "meat",
+      "emoji": "🥩",
+      "default_unit": "g",
+      "per_100g": { "kcal": 294, "protein": 25, "fat": 21, "carbs": 0, "iron": 1.9, "vit_b12": 2.6, "zinc": 3.9 }
+    },
+    {
+      "slug": "uz_mol_goshti",
+      "names": { "uz": "Mol go'shti (xom)", "ru": "Говядина (сырое)", "en": "Beef (raw)" },
+      "category": "meat",
+      "emoji": "🥩",
+      "default_unit": "g",
+      "per_100g": { "kcal": 250, "protein": 26, "fat": 15, "carbs": 0, "iron": 2.6, "vit_b12": 2.1, "zinc": 4.8 }
+    },
+    {
+      "slug": "uz_tovuq_grudki",
+      "names": { "uz": "Tovuq grudki (xom)", "ru": "Куриная грудка (сырое)", "en": "Chicken breast (raw)" },
+      "category": "meat",
+      "emoji": "🍗",
+      "default_unit": "g",
+      "per_100g": { "kcal": 165, "protein": 31, "fat": 3.6, "carbs": 0, "vit_b6": 1.0, "vit_b12": 0.3 }
+    },
+    {
+      "slug": "uz_tuxum",
+      "names": { "uz": "Tovuq tuxumi", "ru": "Яйцо куриное", "en": "Chicken egg" },
+      "category": "dairy",
+      "emoji": "🥚",
+      "default_unit": "piece",
+      "grams_per_unit": 50,
+      "unit_aliases": ["dona", "шт"],
+      "per_100g": { "kcal": 155, "protein": 13, "fat": 11, "carbs": 1.1, "vit_b12": 1.1, "vit_d": 2.0, "vit_a": 140 }
+    },
+    {
+      "slug": "uz_sabzi",
+      "names": { "uz": "Sabzi", "ru": "Морковь", "en": "Carrot" },
+      "category": "vegetables",
+      "emoji": "🥕",
+      "default_unit": "g",
+      "grams_per_unit": 60,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 41, "protein": 0.9, "fat": 0.2, "carbs": 10, "vit_a": 835, "vit_c": 5.9, "vit_k": 13.2 }
+    },
+    {
+      "slug": "uz_piyoz",
+      "names": { "uz": "Piyoz", "ru": "Лук репчатый", "en": "Onion" },
+      "category": "vegetables",
+      "emoji": "🧅",
+      "default_unit": "g",
+      "grams_per_unit": 110,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 40, "protein": 1.1, "fat": 0.1, "carbs": 9.3, "vit_c": 7.4 }
+    },
+    {
+      "slug": "uz_pomidor",
+      "names": { "uz": "Pomidor", "ru": "Помидор", "en": "Tomato" },
+      "category": "vegetables",
+      "emoji": "🍅",
+      "default_unit": "g",
+      "grams_per_unit": 120,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 18, "protein": 0.9, "fat": 0.2, "carbs": 3.9, "vit_c": 13.7, "vit_a": 42, "potassium": 237 }
+    },
+    {
+      "slug": "uz_bodring",
+      "names": { "uz": "Bodring", "ru": "Огурец", "en": "Cucumber" },
+      "category": "vegetables",
+      "emoji": "🥒",
+      "default_unit": "g",
+      "grams_per_unit": 130,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 15, "protein": 0.7, "fat": 0.1, "carbs": 3.6, "vit_k": 16.4 }
+    },
+    {
+      "slug": "uz_kartoshka",
+      "names": { "uz": "Kartoshka (xom)", "ru": "Картофель (сырой)", "en": "Potato (raw)" },
+      "category": "vegetables",
+      "emoji": "🥔",
+      "default_unit": "g",
+      "grams_per_unit": 170,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 77, "protein": 2, "fat": 0.1, "carbs": 17, "vit_c": 19.7, "potassium": 429 }
+    },
+    {
+      "slug": "uz_bulgor_qalampir",
+      "names": { "uz": "Bulg'or qalampir", "ru": "Болгарский перец", "en": "Bell pepper" },
+      "category": "vegetables",
+      "emoji": "🫑",
+      "default_unit": "g",
+      "grams_per_unit": 120,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 31, "protein": 1, "fat": 0.3, "carbs": 6, "vit_c": 128, "vit_a": 157 }
+    },
+    {
+      "slug": "uz_olma",
+      "names": { "uz": "Olma", "ru": "Яблоко", "en": "Apple" },
+      "category": "fruits",
+      "emoji": "🍎",
+      "default_unit": "g",
+      "grams_per_unit": 180,
+      "unit_aliases": ["dona"],
+      "per_100g": { "kcal": 52, "protein": 0.3, "fat": 0.2, "carbs": 14, "vit_c": 4.6, "fiber": 2.4 }
+    },
+    {
+      "slug": "uz_sut",
+      "names": { "uz": "Sut 3.2%", "ru": "Молоко 3.2%", "en": "Milk 3.2%" },
+      "category": "dairy",
+      "emoji": "🥛",
+      "default_unit": "ml",
+      "grams_per_unit": 200,
+      "unit_aliases": ["stakan"],
+      "per_100g": { "kcal": 60, "protein": 3.2, "fat": 3.2, "carbs": 4.8, "calcium": 113, "vit_b12": 0.4, "vit_d": 1.3 }
+    },
+    {
+      "slug": "uz_qatiq",
+      "names": { "uz": "Qatiq", "ru": "Катык (кисломолочный)", "en": "Qatiq (fermented milk)" },
+      "category": "dairy",
+      "emoji": "🥛",
+      "default_unit": "ml",
+      "grams_per_unit": 200,
+      "per_100g": { "kcal": 56, "protein": 3.4, "fat": 3.2, "carbs": 4.1, "calcium": 120, "vit_b12": 0.3 }
+    },
+    {
+      "slug": "uz_qaymoq",
+      "names": { "uz": "Qaymoq (20%)", "ru": "Сметана 20%", "en": "Sour cream 20%" },
+      "category": "dairy",
+      "emoji": "🥛",
+      "default_unit": "g",
+      "per_100g": { "kcal": 206, "protein": 2.8, "fat": 20, "carbs": 3.4, "calcium": 86 }
+    },
+    {
+      "slug": "uz_suzma",
+      "names": { "uz": "Suzma", "ru": "Сузма (творог)", "en": "Suzma (strained yogurt)" },
+      "category": "dairy",
+      "emoji": "🥛",
+      "default_unit": "g",
+      "per_100g": { "kcal": 155, "protein": 11, "fat": 10, "carbs": 4, "calcium": 140 }
+    },
+    {
+      "slug": "uz_sariyog",
+      "names": { "uz": "Sariyog'", "ru": "Сливочное масло", "en": "Butter" },
+      "category": "fats",
+      "emoji": "🧈",
+      "default_unit": "g",
+      "unit_aliases": ["chay qoshiq", "osh qoshiq"],
+      "per_100g": { "kcal": 717, "protein": 0.9, "fat": 81, "carbs": 0.1, "vit_a": 684 }
+    },
+    {
+      "slug": "uz_kungaboqar_yog",
+      "names": { "uz": "Kungaboqar yog'i", "ru": "Подсолнечное масло", "en": "Sunflower oil" },
+      "category": "fats",
+      "emoji": "🫒",
+      "default_unit": "ml",
+      "unit_aliases": ["chay qoshiq", "osh qoshiq"],
+      "per_100g": { "kcal": 884, "protein": 0, "fat": 100, "carbs": 0, "vit_e": 41.08 }
+    },
+    {
+      "slug": "uz_choy_qora",
+      "names": { "uz": "Choy (qora, qaynatilgan)", "ru": "Чай чёрный (заваренный)", "en": "Black tea (brewed)" },
+      "category": "drinks",
+      "emoji": "🍵",
+      "default_unit": "ml",
+      "grams_per_unit": 200,
+      "unit_aliases": ["stakan", "piyola"],
+      "per_100g": { "kcal": 1, "protein": 0, "fat": 0, "carbs": 0.3 }
+    },
+    {
+      "slug": "uz_asal",
+      "names": { "uz": "Asal", "ru": "Мёд", "en": "Honey" },
+      "category": "sweets",
+      "emoji": "🍯",
+      "default_unit": "g",
+      "unit_aliases": ["chay qoshiq", "osh qoshiq"],
+      "per_100g": { "kcal": 304, "protein": 0.3, "fat": 0, "carbs": 82 }
+    },
+    {
+      "slug": "uz_shakar",
+      "names": { "uz": "Shakar", "ru": "Сахар", "en": "Sugar" },
+      "category": "sweets",
+      "emoji": "🍯",
+      "default_unit": "g",
+      "unit_aliases": ["chay qoshiq", "osh qoshiq"],
+      "per_100g": { "kcal": 387, "protein": 0, "fat": 0, "carbs": 100 }
+    },
+    {
+      "slug": "uz_tuz",
+      "names": { "uz": "Tuz", "ru": "Соль", "en": "Salt" },
+      "category": "spices",
+      "emoji": "🧂",
+      "default_unit": "g",
+      "per_100g": { "kcal": 0, "protein": 0, "fat": 0, "carbs": 0, "sodium": 38758 }
+    },
+    {
+      "slug": "uz_zira",
+      "names": { "uz": "Zira", "ru": "Зира (кумин)", "en": "Cumin" },
+      "category": "spices",
+      "emoji": "🌿",
+      "default_unit": "g",
+      "per_100g": { "kcal": 375, "protein": 18, "fat": 22, "carbs": 44, "iron": 66.4, "calcium": 931 }
+    },
+    {
+      "slug": "uz_suv",
+      "names": { "uz": "Suv", "ru": "Вода", "en": "Water" },
+      "category": "drinks",
+      "emoji": "💧",
+      "default_unit": "ml",
+      "per_100g": { "kcal": 0, "protein": 0, "fat": 0, "carbs": 0 }
+    }
+  ]
+}
