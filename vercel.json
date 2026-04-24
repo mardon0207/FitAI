@@ -3,5 +3,15 @@
   "buildCommand": "pnpm --filter @fit/web build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "pnpm install",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ecofit-api.vercel.app/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://ecofit-api.vercel.app/health"
+    }
+  ]
 }

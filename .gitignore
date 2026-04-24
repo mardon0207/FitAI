@@ -41,3 +41,5 @@ fit-handoff/
 # coverage
 coverage/
 *.lcov
+
+.vercel

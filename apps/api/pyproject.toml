@@ -20,6 +20,9 @@ dependencies = [
     "orjson>=3.10.7",
 ]
 
+[project.scripts]
+app = "app.main:app"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.3",
