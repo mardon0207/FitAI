@@ -3,7 +3,6 @@
   "buildCommand": "pnpm --filter @fit/web build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "pnpm install",
-  "framework": "vite",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
