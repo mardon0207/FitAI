@@ -1,4 +1,6 @@
-# FitAI
+# FitAI - Smart Health & Fitness Tracker
+
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployment-success?style=flat-square&logo=vercel)](https://fit-ai-web.vercel.app)
 
 Oilaviy kaloriya, qadam va mikroelement tracker — tijorat emas, yaqinlar uchun.
 
