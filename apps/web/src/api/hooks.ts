@@ -109,7 +109,7 @@ export function useFoods(slugs: string[]) {
       const results: FoodDetail[] = [];
       
       if (foodsRes.data) {
-        foodsRes.data.forEach(food => {
+        (foodsRes.data as any[]).forEach(food => {
           results.push({
             id: food.slug as any,
             name: food.name_uz,
@@ -136,7 +136,7 @@ export function useFoods(slugs: string[]) {
       }
 
       if (recipesRes.data) {
-        recipesRes.data.forEach(recipe => {
+        (recipesRes.data as any[]).forEach(recipe => {
           results.push({
             id: recipe.slug as any,
             name: recipe.name_uz,
