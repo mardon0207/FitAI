@@ -6,6 +6,8 @@ import { Phone, Card, Chip, Button } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs } from '@/stores/prefs';
+import { useProfile } from '@/stores/profile';
+import type { Goal, ActivityLevel, Gender } from '@fit/shared-types';
 
 interface QuizHeaderProps {
   step: number;
@@ -65,11 +67,13 @@ export function QuizScreen() {
 }
 
 function Step1({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [goal, setGoal] = useState('lose');
+  const goal = useProfile((s) => s.goal);
+  const updateProfile = useProfile((s) => s.updateProfile);
+
   const opts = [
-    { id: 'lose', icon: '🏃', title: 'Vazn kamaytirish', desc: "Sog'lom ozish" },
-    { id: 'maintain', icon: '⚖️', title: 'Vaznni tutib turish', desc: 'Hozirgi vaznda qolish' },
-    { id: 'gain', icon: '💪', title: 'Mushaklarni oshirish', desc: 'Massa va kuch ortishi' },
+    { id: 'lose' as Goal, icon: '🏃', title: 'Vazn kamaytirish', desc: "Sog'lom ozish" },
+    { id: 'maintain' as Goal, icon: '⚖️', title: 'Vaznni tutib turish', desc: 'Hozirgi vaznda qolish' },
+    { id: 'gain' as Goal, icon: '💪', title: 'Mushaklarni oshirish', desc: 'Massa va kuch ortishi' },
   ];
   return (
     <>
@@ -81,7 +85,7 @@ function Step1({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
             <button
               type="button"
               key={o.id}
-              onClick={() => setGoal(o.id)}
+              onClick={() => updateProfile({ goal: o.id })}
               style={{
                 padding: 18, borderRadius: 18, background: '#fff',
                 border: `2px solid ${active ? FIT.primary : FIT.border}`,
@@ -121,6 +125,9 @@ function Step1({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
 }
 
 function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+  const profile = useProfile();
+  const updateProfile = useProfile((s) => s.updateProfile);
+
   return (
     <>
       <QuizHeader step={2} title="Bo'y va vazningiz" onBack={onBack} />
@@ -137,7 +144,14 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <Card pad={20} style={{ flex: 1, textAlign: 'center' }}>
+          <Card
+            pad={20}
+            style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+            onClick={() => {
+              const val = window.prompt("Bo'yingizni kiriting (sm):", String(profile.height));
+              if (val) updateProfile({ height: Number(val) });
+            }}
+          >
             <div style={{
               fontSize: 11, color: FIT.textMuted, fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: 1,
@@ -148,11 +162,18 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
               fontSize: 44, fontWeight: 800, fontFamily: FIT.mono,
               color: FIT.primary, letterSpacing: -1.5, marginTop: 8,
             }}>
-              178
+              {profile.height}
             </div>
             <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600 }}>sm</div>
           </Card>
-          <Card pad={20} style={{ flex: 1, textAlign: 'center' }}>
+          <Card
+            pad={20}
+            style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+            onClick={() => {
+              const val = window.prompt("Vazningizni kiriting (kg):", String(profile.weight));
+              if (val) updateProfile({ weight: Number(val) });
+            }}
+          >
             <div style={{
               fontSize: 11, color: FIT.textMuted, fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: 1,
@@ -163,7 +184,7 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
               fontSize: 44, fontWeight: 800, fontFamily: FIT.mono,
               color: FIT.accent, letterSpacing: -1.5, marginTop: 8,
             }}>
-              72.3
+              {profile.weight}
             </div>
             <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600 }}>kg</div>
           </Card>
@@ -177,7 +198,13 @@ function Step2({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
 }
 
 function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [gender, setGender] = useState<'male' | 'female'>('male');
+  const profile = useProfile();
+  const updateProfile = useProfile((s) => s.updateProfile);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - 15 - i);
+  const userYear = currentYear - profile.age;
+
   return (
     <>
       <QuizHeader step={3} title="Yosh va jinsingiz" onBack={onBack} />
@@ -191,36 +218,40 @@ function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
           </div>
           <div style={{
             display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
+            overflowX: 'auto', paddingBottom: 8,
           }}>
-            {[1996, 1997, 1998, 1999, 2000].map((y, i) => {
-              const isActive = i === 2;
+            {years.slice(0, 7).map((y) => {
+              const isActive = y === userYear;
               return (
-                <div
+                <button
                   key={y}
+                  type="button"
+                  onClick={() => updateProfile({ age: currentYear - y })}
                   style={{
                     fontSize: isActive ? 32 : 16,
                     fontWeight: isActive ? 800 : 500, fontFamily: FIT.mono,
                     color: isActive ? FIT.primary : FIT.textSubtle,
                     padding: '8px 12px', opacity: isActive ? 1 : 0.5,
+                    background: 'none', border: 'none', cursor: 'pointer',
                   }}
                 >
                   {y}
-                </div>
+                </button>
               );
             })}
           </div>
         </Card>
         <div style={{ display: 'flex', gap: 12 }}>
           {[
-            { id: 'male', icon: '👨', label: 'Erkak' },
-            { id: 'female', icon: '👩', label: 'Ayol' },
+            { id: 'male' as Gender, icon: '👨', label: 'Erkak' },
+            { id: 'female' as Gender, icon: '👩', label: 'Ayol' },
           ].map((g) => {
-            const active = gender === g.id;
+            const active = profile.gender === g.id;
             return (
               <button
                 type="button"
                 key={g.label}
-                onClick={() => setGender(g.id as typeof gender)}
+                onClick={() => updateProfile({ gender: g.id })}
                 style={{
                   flex: 1, padding: '24px 12px', borderRadius: 18, background: '#fff',
                   border: `2px solid ${active ? FIT.primary : FIT.border}`,
@@ -249,25 +280,25 @@ function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
 }
 
 function Step4({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [level, setLevel] = useState('light');
+  const profile = useProfile();
+  const updateProfile = useProfile((s) => s.updateProfile);
+
   const opts = [
-    { id: 'sedentary', icon: '🪑', title: 'Kam harakat', desc: 'Sedentary' },
-    { id: 'light', icon: '🚶', title: 'Yengil faol', desc: 'Light · 1-2 kun/hafta' },
-    { id: 'moderate', icon: '🏃', title: "O'rtacha", desc: 'Moderate · 3-5 kun/hafta' },
-    { id: 'active', icon: '💪', title: 'Faol', desc: 'Active · 6-7 kun/hafta' },
-    { id: 'very_active', icon: '🔥', title: 'Juda faol', desc: 'Very active · kuniga 2 marta' },
+    { id: 'sedentary' as ActivityLevel, icon: '🚶', title: 'Yengil faol', desc: 'Light · 1-2 kun/hafta' },
+    { id: 'moderate' as ActivityLevel, icon: '🏃', title: "O'rtacha", desc: 'Moderate · 3-5 kun/hafta' },
+    { id: 'active' as ActivityLevel, icon: '💪', title: 'Faol', desc: 'Active · 6-7 kun/hafta' },
   ];
   return (
     <>
       <QuizHeader step={4} title="Qancha faolsiz?" onBack={onBack} />
       <div style={{ flex: 1, padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 8, overflow: 'auto' }}>
         {opts.map((o) => {
-          const active = o.id === level;
+          const active = o.id === profile.activityLevel;
           return (
             <button
               type="button"
               key={o.id}
-              onClick={() => setLevel(o.id)}
+              onClick={() => updateProfile({ activityLevel: o.id })}
               style={{
                 padding: 14, borderRadius: 14, background: '#fff',
                 border: `2px solid ${active ? FIT.primary : FIT.border}`,
@@ -332,6 +363,12 @@ function Step5({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
 }
 
 function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+  const targetKcal = useProfile((s) => s.targetKcal) || 2000;
+  const targetProtein = useProfile((s) => s.targetProtein);
+  const targetCarbs = useProfile((s) => s.targetCarbs);
+  const targetFat = useProfile((s) => s.targetFat);
+  const targets = { kcal: targetKcal, protein: targetProtein, carbs: targetCarbs, fat: targetFat };
+
   return (
     <>
       <QuizHeader step={6} title="Tayyor! 🎉" onBack={onBack} />
@@ -356,16 +393,16 @@ function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
             fontSize: 56, fontWeight: 800, fontFamily: FIT.mono,
             color: FIT.primaryDark, letterSpacing: -2, marginTop: 4,
           }}>
-            2,150
+            {targets.kcal.toLocaleString()}
           </div>
           <div style={{ fontSize: 14, color: FIT.textMuted, fontWeight: 600, marginTop: -4 }}>
             kkal / kun
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
             {[
-              { n: 'Oqsil', v: '145g', c: FIT.protein },
-              { n: 'Uglevod', v: '240g', c: FIT.carbs },
-              { n: "Yog'", v: '65g', c: FIT.fat },
+              { n: 'Oqsil', v: `${targets.protein}g`, c: FIT.protein },
+              { n: 'Uglevod', v: `${targets.carbs}g`, c: FIT.carbs },
+              { n: "Yog'", v: `${targets.fat}g`, c: FIT.fat },
             ].map((m) => (
               <div key={m.n} style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

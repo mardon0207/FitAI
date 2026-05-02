@@ -1,118 +1,156 @@
-// Manual food entry (create custom food). Ported from design/screens-b.jsx::ScreenManual.
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Phone, TopBar, Card, Chip, Button, Input } from '@/design/primitives';
-import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
+import { useDiary } from '@/stores/diary';
+import type { MealType } from '@fit/shared-types';
+
+const MEALS: { type: MealType; labelKey: 'breakfast' | 'lunch' | 'dinner' | 'snack' }[] = [
+  { type: 'breakfast', labelKey: 'breakfast' },
+  { type: 'lunch', labelKey: 'lunch' },
+  { type: 'dinner', labelKey: 'dinner' },
+  { type: 'snack', labelKey: 'snack' },
+];
 
 export function ManualScreen() {
   const t = useT();
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
-  const [name, setName] = useState('Buvimning palovi');
-  const [brand, setBrand] = useState('Uy ovqati');
-  const [meal, setMeal] = useState(1);
+  const addEntry = useDiary((s) => s.addEntry);
+  
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [meal, setMeal] = useState<MealType>('lunch');
+  
+  const [grams, setGrams] = useState('100');
+  const [kcal, setKcal] = useState('');
+  const [protein, setProtein] = useState('');
+  const [carbs, setCarbs] = useState('');
+  const [fat, setFat] = useState('');
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    
+    addEntry({
+      mealType: meal,
+      foodSlug: '__manual__',
+      foodName: name.trim(),
+      foodEmoji: '📝',
+      quantity: 1,
+      unit: 'serving',
+      grams: Number(grams) || 100,
+      kcal: Number(kcal) || 0,
+      protein: Number(protein) || 0,
+      carbs: Number(carbs) || 0,
+      fat: Number(fat) || 0,
+      micros: {},
+      note: brand.trim() || undefined,
+    });
+    
+    navigate('/diary');
+  };
 
   return (
     <Phone dark={dark}>
       <TopBar back onBack={() => navigate(-1)} title="Qo'lda qo'shish" transparent />
 
-      <div style={{
-        flex: 1, padding: '0 20px 20px', overflow: 'auto',
-        display: 'flex', flexDirection: 'column', gap: 12,
-      }}>
-        <div style={{ fontSize: 13, color: FIT.textMuted, marginBottom: 4 }}>
-          Bu ovqat bazada yo&apos;q bo&apos;lsa, o&apos;zingiz qo&apos;shing
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          flex: 1, padding: '0 20px 40px', overflow: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 20,
+        }}
+      >
+        <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600, lineHeight: 1.5 }}>
+          Agar qidiruv natijalarida ovqat topilmasa, uning ma'lumotlarini o'zingiz kiritishingiz mumkin.
         </div>
-        <Input label="NOMI" value={name} onChange={setName} />
-        <Input label="BRAND / MANBA (ixtiyoriy)" value={brand} onChange={setBrand} />
 
-        <Card pad={14}>
-          <div style={{
-            fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
-          }}>
-            PORSIYA
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input label="OVQAT NOMI" value={name} onChange={setName} placeholder="Masalan: Uy sharoitida tayyorlangan salat" />
+          <Input label="BRAND YOKI TAVSIF" value={brand} onChange={setBrand} placeholder="Masalan: Uyda pishirilgan" />
+        </div>
+
+        <Card pad={20} style={{ border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}` }}>
+          <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            PORSIYA HAJMI
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{
-              flex: 1, height: 48, borderRadius: 10, border: `1px solid ${FIT.border}`,
-              display: 'flex', alignItems: 'center', padding: '0 12px',
-              fontFamily: FIT.mono, fontWeight: 700, fontSize: 15,
-            }}>
-              250
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+               <input
+                 type="number" value={grams} onChange={(e) => setGrams(e.target.value)}
+                 style={{
+                   width: '100%', height: 54, borderRadius: 16, border: `1.5px solid ${dark ? '#334155' : '#E2E8F0'}`,
+                   padding: '0 16px', fontFamily: FIT.mono, fontWeight: 800, fontSize: 18,
+                   background: dark ? 'rgba(255,255,255,0.02)' : '#fff', color: FIT.text, outline: 'none'
+                 }}
+                 placeholder="100"
+               />
             </div>
             <div style={{
-              width: 100, height: 48, borderRadius: 10, border: `1px solid ${FIT.border}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 12px', fontSize: 14, fontWeight: 600,
+              width: 100, height: 54, borderRadius: 16, background: dark ? '#334155' : '#F1F5F9',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: FIT.textMuted
             }}>
-              kosa <Icon name="chevronDown" size={14} color={FIT.textMuted} />
+              gramm
             </div>
-          </div>
-          <div style={{ fontSize: 11, color: FIT.textMuted, marginTop: 8 }}>
-            1 kosa = 250g
           </div>
         </Card>
 
-        <Card pad={14}>
-          <div style={{
-            fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
-          }}>
-            OZIQLIK (porsiya uchun)
+        <Card pad={20} style={{ border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}` }}>
+          <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 20 }}>
+            OZIQLIK QIYMATI (porsiya uchun)
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { l: 'Kaloriya', v: '420', u: t.kcal, c: FIT.primary },
-              { l: 'Oqsil', v: '22', u: 'g', c: FIT.protein },
-              { l: 'Uglevod', v: '60', u: 'g', c: FIT.carbs },
-              { l: "Yog'", v: '12', u: 'g', c: FIT.fat },
+              { l: 'Kaloriya', v: kcal, set: setKcal, u: 'kkal', c: FIT.primary },
+              { l: 'Oqsil', v: protein, set: setProtein, u: 'g', c: FIT.protein },
+              { l: 'Uglevod', v: carbs, set: setCarbs, u: 'g', c: FIT.carbs },
+              { l: "Yog'", v: fat, set: setFat, u: 'g', c: FIT.fat },
             ].map((f) => (
-              <div key={f.l} style={{ padding: 12, background: FIT.surfaceAlt, borderRadius: 10 }}>
-                <div style={{ fontSize: 10, color: FIT.textMuted, fontWeight: 600 }}>{f.l}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 3 }}>
-                  <span style={{
-                    fontSize: 22, fontWeight: 800, fontFamily: FIT.mono,
-                    color: f.c, letterSpacing: -0.5,
-                  }}>
-                    {f.v}
-                  </span>
-                  <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{f.u}</span>
+              <div key={f.l} style={{ 
+                padding: 16, background: dark ? 'rgba(255,255,255,0.02)' : '#F8FAFC', 
+                borderRadius: 16, border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`
+              }}>
+                <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 700, marginBottom: 6 }}>{f.l}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <input
+                    type="number" value={f.v} onChange={(e) => f.set(e.target.value)}
+                    style={{
+                      width: '100%', border: 'none', background: 'transparent',
+                      fontSize: 24, fontWeight: 900, fontFamily: FIT.mono,
+                      color: f.c, outline: 'none'
+                    }}
+                    placeholder="0"
+                  />
+                  <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 700 }}>{f.u}</span>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
-            paddingTop: 12, borderTop: `1px solid ${FIT.border}`,
-          }}>
-            <div style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>
-              Batafsil kiritish (vitaminlar)
-            </div>
-            <div style={{
-              width: 40, height: 22, borderRadius: 11, background: FIT.border, position: 'relative',
-            }}>
-              <div style={{
-                position: 'absolute', top: 2, left: 2, width: 18, height: 18,
-                borderRadius: 9, background: '#fff',
-              }} />
-            </div>
-          </div>
         </Card>
 
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[t.breakfast, t.lunch, t.dinner, t.snack].map((m, i) => (
-            <Chip key={m} active={i === meal} size="sm" onClick={() => setMeal(i)}>{m}</Chip>
-          ))}
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, paddingLeft: 4 }}>
+             QAYSI VAQTDA YEDINGIZ?
+          </div>
+          <div style={{ display: 'flex', gap: 8, overflow: 'auto', paddingBottom: 4 }}>
+            {MEALS.map((m) => (
+              <Chip key={m.type} active={m.type === meal} size="sm" onClick={() => setMeal(m.type)} style={{ padding: '10px 20px', borderRadius: 14 }}>
+                {t[m.labelKey]}
+              </Chip>
+            ))}
+          </div>
         </div>
 
-        <Button variant="primary" size="lg" full onClick={() => navigate('/diary')}>
-          Saqlash va qo&apos;shish
+        <Button 
+          variant="primary" size="lg" full onClick={handleSave} 
+          style={{ height: 56, borderRadius: 18, fontSize: 16, fontWeight: 800, marginTop: 12, boxShadow: `0 8px 20px ${FIT.primary}44` }}
+        >
+          Ovqatni qo'shish
         </Button>
-      </div>
+      </motion.div>
     </Phone>
   );
 }

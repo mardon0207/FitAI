@@ -8,7 +8,7 @@ import { Phone, TopBar, TabBar, Card, Chip } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
-import { useTabNav } from '@/App';
+import { useTabNav } from '@/hooks/useTabNav';
 import { useDiary } from '@/stores/diary';
 import { todayYmd } from '@/data/date';
 import {

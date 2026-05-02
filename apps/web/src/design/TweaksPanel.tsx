@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { PRIMARY_PALETTES, usePrefs, type Lang } from '@/stores/prefs';
+import { FIT } from '@/design/tokens';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
 const THEMES = [
@@ -8,42 +8,23 @@ const THEMES = [
 ] as const;
 const COLORS = Object.keys(PRIMARY_PALETTES);
 
-/** Floating developer tweaks panel — ports `design/FitAI.html::Tweaks`.
- *  Toggles language, theme, and primary accent live across the app. */
-export function TweaksPanel() {
-  const [open, setOpen] = useState(false);
+/** Pure UI for tweaks panel — removed floating button logic. 
+ *  This is now used as a modal or inline element in the Profile settings. */
+export function TweaksPanelContent({ onClose }: { onClose: () => void }) {
   const { lang, theme, primaryColor, setLang, setTheme, setPrimaryColor } = usePrefs();
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Open tweaks"
-        style={{
-          position: 'fixed', bottom: 16, right: 16, zIndex: 9999,
-          width: 44, height: 44, borderRadius: 999,
-          background: '#fff', border: '1px solid #E5E7EB',
-          boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
-          fontSize: 18, cursor: 'pointer',
-        }}
-      >⚙️</button>
-    );
-  }
 
   return (
     <div style={{
-      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-      width: 280, background: '#fff', borderRadius: 16,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.18)', padding: 18,
-      fontFamily: 'Inter, sans-serif', border: '1px solid #E5E7EB',
+      width: '100%', background: 'transparent',
+      fontFamily: 'Inter, sans-serif',
       color: '#0F172A',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>Tweaks</div>
-        <div onClick={() => setOpen(false)} style={{ cursor: 'pointer', color: '#64748B', fontSize: 18 }}>×</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text }}>Tweak Panel</div>
+        <div onClick={onClose} style={{ cursor: 'pointer', color: FIT.textMuted, fontSize: 24 }}>×</div>
       </div>
 
-      <Label>Til</Label>
+      <Label>Til (Language)</Label>
       <Row>
         {LANGS.map((l) => (
           <Pill key={l} active={lang === l} onClick={() => setLang(l)} color={primaryColor}>
@@ -52,7 +33,7 @@ export function TweaksPanel() {
         ))}
       </Row>
 
-      <Label>Tema</Label>
+      <Label>Tema (Theme)</Label>
       <Row>
         {THEMES.map((th) => (
           <Pill key={th.k} active={theme === th.k} onClick={() => setTheme(th.k)} color={primaryColor}>
@@ -61,38 +42,42 @@ export function TweaksPanel() {
         ))}
       </Row>
 
-      <Label>Primary rang</Label>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+      <Label>Primary Rang (Accent)</Label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {COLORS.map((c) => (
           <div
             key={c}
             onClick={() => setPrimaryColor(c)}
             style={{
-              width: 36, height: 36, borderRadius: 10, background: c, cursor: 'pointer',
-              border: primaryColor === c ? '3px solid #0F172A' : '3px solid transparent',
+              width: 44, height: 44, borderRadius: 12, background: c, cursor: 'pointer',
+              border: primaryColor === c ? '3px solid #0F172A' : '4px solid transparent',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
             }}
           />
         ))}
       </div>
 
-      <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.5 }}>
-        Til, tema va primary rang butun app bo'ylab darhol qo'llanadi.
+      <div style={{ fontSize: 12, color: FIT.textMuted, lineHeight: 1.5, background: `${FIT.primary}10`, padding: 12, borderRadius: 12 }}>
+        Bu sozlamalar butun ilova bo'ylab darhol qo'llaniladi.
       </div>
     </div>
   );
 }
 
+// Keep original for back-compat if needed, but remove the floating button
+export function TweaksPanel() { return null; }
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 11, fontWeight: 600, color: '#64748B',
-      textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6,
+      fontSize: 11, fontWeight: 800, color: FIT.textMuted,
+      textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
     }}>{children}</div>
   );
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>{children}</div>;
+  return <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>{children}</div>;
 }
 
 interface PillProps {
@@ -107,14 +92,14 @@ function Pill({ active, color, onClick, children }: PillProps) {
     <div
       onClick={onClick}
       style={{
-        flex: 1, padding: '8px 0', textAlign: 'center', borderRadius: 8,
-        background: active ? color : '#F5F5F4',
+        flex: 1, padding: '12px 0', textAlign: 'center', borderRadius: 12,
+        background: active ? color : (active ? '#fff' : '#F1F5F9'),
         color: active ? '#fff' : '#0F172A',
-        fontSize: 12, fontWeight: 600, cursor: 'pointer',
+        fontSize: 13, fontWeight: 800, cursor: 'pointer',
+        boxShadow: active ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
       }}
     >
       {children}
     </div>
   );
 }
-

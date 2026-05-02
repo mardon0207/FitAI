@@ -1,262 +1,245 @@
-// Food Detail — real food from DB, live-scaled nutrients, saves to diary.
-
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Phone, TopBar, Card, Chip, Button, MacroBar } from '@/design/primitives';
-import { Icon } from '@/design/Icon';
+import { Phone, TopBar, Chip, Button } from '@/design/primitives';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
-import { getFood, nutrientsForGrams, resolveGrams } from '@/data/db';
+import { useFood } from '@/api/hooks';
 import { useDiary } from '@/stores/diary';
 import type { MealType, Unit } from '@fit/shared-types';
+import { resolveGrams, scaleNutrients } from '@/lib/nutrition';
 
-const ALL_UNITS: Unit[] = ['g', 'ml', 'piece', 'cup', 'tbsp', 'tsp', 'serving'];
 
 export function FoodDetailScreen() {
   const { id } = useParams();
   const [sp] = useSearchParams();
   const t = useT();
-  const lang = usePrefs((s) => s.lang);
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
   const addEntry = useDiary((s) => s.addEntry);
 
-  const food = id ? getFood(id) : undefined;
+  const { data: food, isLoading } = useFood(id);
   const defaultMeal = (sp.get('meal') as MealType) || 'lunch';
 
   const [qty, setQty] = useState<number>(1);
-  const [unit, setUnit] = useState<Unit>(food?.defaultUnit ?? 'g');
+  const [unit, setUnit] = useState<Unit>('g');
   const [meal, setMeal] = useState<MealType>(defaultMeal);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const grams = useMemo(() => (food ? resolveGrams(food, qty, unit) : 0), [food, qty, unit]);
-  const nutrients = useMemo(() => (food ? nutrientsForGrams(food, grams) : {}), [food, grams]);
+  const [unitInitialized, setUnitInitialized] = useState(false);
+  useMemo(() => {
+    if (food && !unitInitialized) {
+      const u = (food.defaultUnit as Unit) ?? 'g';
+      setUnit(u);
+      setQty(food.defaultQty ?? (u === 'g' || u === 'ml' ? 100 : 1));
+      setUnitInitialized(true);
+    }
+  }, [food, unitInitialized]);
 
-  if (!food) {
+  const grams = useMemo(() => {
+    return resolveGrams(qty, unit, food?.gramsPerUnit);
+  }, [qty, unit, food]);
+
+  const nutrients = useMemo(() => {
+    if (!food?.nutrients) return {} as Record<string, number>;
+    return scaleNutrients(food.nutrients, grams);
+  }, [food, grams]);
+
+  if (isLoading) {
     return (
       <Phone dark={dark}>
         <TopBar back onBack={() => navigate(-1)} transparent />
-        <div style={{ padding: 20, textAlign: 'center', color: FIT.textMuted }}>
-          Ovqat topilmadi
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+           <div className="loader" style={{ width: 40, height: 40, border: `4px solid ${FIT.primarySoft}`, borderTopColor: FIT.primary, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+           <div style={{ fontSize: 14, fontWeight: 700, color: FIT.textMuted }}>{t.preparing}</div>
         </div>
       </Phone>
     );
   }
 
+  if (!food) return null;
+
   const handleSave = () => {
-    const entry = addEntry({ foodSlug: food.slug, mealType: meal, quantity: qty, unit });
-    if (entry) {
-      setSaved(true);
-      setTimeout(() => navigate('/diary'), 700);
+    if (saving || saved) return;
+    setSaving(true);
+    addEntry({
+      foodSlug: String(food.id),
+      foodName: food.name,
+      foodEmoji: food.emoji ?? undefined,
+      mealType: meal,
+      quantity: qty,
+      unit,
+      grams,
+      kcal: nutrients.kcal ?? 0,
+      protein: nutrients.protein ?? 0,
+      carbs: nutrients.carbs ?? 0,
+      fat: nutrients.fat ?? 0,
+      micros: Object.fromEntries(
+        Object.entries(nutrients).filter(([k]) => !['kcal', 'protein', 'carbs', 'fat'].includes(k))
+      ),
+    });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => navigate('/diary'), 800);
+  };
+
+  const handleUnitChange = (u: Unit) => {
+    setUnit(u);
+    if (u === 'g' || u === 'ml') {
+      if (qty < 10) setQty(100);
+    } else {
+      if (qty >= 10) setQty(1);
     }
   };
 
+  const step = (unit === 'g' || unit === 'ml') ? 10 : 1;
   const fmt = (n: number | undefined, decimals = 0) =>
-    n === undefined ? '—' : decimals === 0 ? Math.round(n).toString() : n.toFixed(decimals);
+    n === undefined || isNaN(n) ? '—' : decimals === 0 ? Math.round(n).toString() : n.toFixed(decimals);
 
   return (
     <Phone dark={dark}>
-      <TopBar back onBack={() => navigate(-1)} transparent />
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 150px' }}>
-        <div style={{
-          height: 180, borderRadius: 24,
-          background: `linear-gradient(135deg, ${FIT.accentSoft}, #FDE68A)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 96, marginBottom: 16,
-        }}>
-          {food.emoji ?? '🍽'}
-        </div>
-
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>
-          {food.namesAll[lang] ?? food.name}
-        </div>
-        <div style={{ fontSize: 13, color: FIT.textMuted, marginTop: 2 }}>
-          {food.isRecipe ? "O'zbek milliy taomi · Retsept" : `Ingredient${food.category ? ` · ${food.category}` : ''}`}
-        </div>
-
-        <Card pad={16} style={{ marginTop: 16 }}>
-          <div style={{
-            fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: 1,
-          }}>
-            PORSIYA · ~{Math.round(grams)}g
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              background: FIT.surfaceAlt, borderRadius: 12, padding: 4,
-            }}>
-              <button type="button" onClick={() => setQty(Math.max(0.25, round2(qty - 0.25)))}
-                style={stepperBtn()} aria-label="−">−</button>
-              <div style={{ width: 56, textAlign: 'center', fontSize: 17, fontWeight: 800, fontFamily: FIT.mono }}>
-                {qty}
-              </div>
-              <button type="button" onClick={() => setQty(round2(qty + 0.25))}
-                style={{ ...stepperBtn(), color: FIT.primary }} aria-label="+">+</button>
-            </div>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as Unit)}
-              style={{
-                height: 40, padding: '0 14px', borderRadius: 12,
-                background: FIT.surfaceAlt, border: 'none',
-                fontSize: 13, fontWeight: 600, fontFamily: FIT.sans,
-                cursor: 'pointer',
-              }}
-            >
-              {ALL_UNITS.map((u) => (
-                <option key={u} value={u}>{unitLabel(u)}</option>
-              ))}
-            </select>
-          </div>
-        </Card>
-
-        <Card pad={20} style={{ marginTop: 10, textAlign: 'center' }}>
-          <div style={{
-            fontSize: 48, fontWeight: 800, fontFamily: FIT.mono,
-            color: FIT.primary, letterSpacing: -2,
-          }}>
-            {fmt(nutrients.kcal)}
-          </div>
-          <div style={{ fontSize: 12, color: FIT.textMuted, fontWeight: 600, marginTop: -4 }}>
-            {t.kcal}
-          </div>
-          <div style={{ marginTop: 10 }}>
-            <MacroBar
-              p={(nutrients.protein ?? 0) * 4}
-              c={(nutrients.carbs ?? 0) * 4}
-              f={(nutrients.fat ?? 0) * 9}
-              h={10}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 12, justifyContent: 'center', fontSize: 12 }}>
-            {[
-              { n: 'P', v: fmt(nutrients.protein, 1), c: FIT.protein },
-              { n: 'C', v: fmt(nutrients.carbs, 1), c: FIT.carbs },
-              { n: 'F', v: fmt(nutrients.fat, 1), c: FIT.fat },
-            ].map((m) => (
-              <div key={m.n}>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: 3, background: m.c }} />
-                  <span style={{ fontWeight: 600 }}>{m.v}g</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {Object.keys(nutrients).filter(
-          (k) => !['kcal', 'protein', 'carbs', 'fat'].includes(k),
-        ).length > 0 && (
-          <Card pad={16} style={{ marginTop: 10 }}>
-            <div style={{
-              fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
-            }}>
-              Mikronutrientlar (bu porsiya uchun)
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {Object.entries(nutrients)
-                .filter(([k]) => !['kcal', 'protein', 'carbs', 'fat'].includes(k))
-                .map(([k, v]) => (
-                  <div key={k} style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    padding: '6px 10px', background: FIT.surfaceAlt, borderRadius: 8,
-                    fontSize: 12,
-                  }}>
-                    <span style={{ color: FIT.textMuted, fontWeight: 600 }}>{displayKey(k)}</span>
-                    <span style={{ fontFamily: FIT.mono, fontWeight: 700 }}>{v.toFixed(2)}</span>
-                  </div>
-                ))}
-            </div>
-          </Card>
-        )}
-
-        {food.isRecipe && food.ingredients && (
-          <>
-            <div style={{ fontSize: 15, fontWeight: 700, margin: '20px 0 10px' }}>Ingredientlar</div>
-            <Card pad={14}>
-              {food.ingredients.map((ing, i, arr) => {
-                const src = getFood(ing.slug);
-                return (
-                  <div key={ing.slug} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
-                    borderBottom: i < arr.length - 1 ? `1px solid ${FIT.borderSoft}` : 'none',
-                  }}>
-                    <span style={{ fontSize: 18 }}>{src?.emoji ?? '•'}</span>
-                    <span style={{ fontSize: 13, flex: 1 }}>
-                      {src?.namesAll[lang] ?? ing.slug}
-                    </span>
-                    <span style={{
-                      fontSize: 12, fontFamily: FIT.mono, color: FIT.textMuted,
-                    }}>
-                      {ing.grams}g
-                    </span>
-                  </div>
-                );
-              })}
-              <Button
-                variant="ghost" size="sm" full
-                onClick={() => navigate('/composer')}
-                style={{ marginTop: 4 }}
-              >
-                Ingredientlarni o&apos;zgartirish →
-              </Button>
-            </Card>
-          </>
-        )}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <TopBar back onBack={() => navigate(-1)} transparent />
       </div>
 
+      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 120 }}>
+        <div style={{
+          height: 240, position: 'relative',
+          background: `linear-gradient(135deg, ${food.isRecipe ? '#F59E0B' : '#10B981'}, ${food.isRecipe ? '#F87171' : '#3B82F6'})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: -40, overflow: 'hidden'
+        }}>
+          <div style={{ fontSize: 100, position: 'relative', zIndex: 2 }}>{food.emoji ?? '🍽'}</div>
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 3, padding: '0 20px' }}>
+          {/* Header Card */}
+          <div style={{
+            background: dark ? '#1E293B' : '#fff', borderRadius: 28, padding: '24px 20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: FIT.text, lineHeight: 1.1 }}>{food.name}</div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                   <span style={{ padding: '2px 8px', background: `${FIT.primary}15`, color: FIT.primary, borderRadius: 8, fontSize: 10, fontWeight: 800 }}>{food.isRecipe ? t.nationalDish : t.ingredient}</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 32, fontWeight: 900, fontFamily: FIT.mono, color: FIT.primary }}>{fmt(nutrients.kcal)}</div>
+                <div style={{ fontSize: 10, color: FIT.textMuted, fontWeight: 800 }}>{t.kcal.toUpperCase()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <div style={{
+              flex: 1.2, background: dark ? '#1E293B' : '#fff', borderRadius: 20, padding: 16,
+              boxShadow: FIT.shadowSm, border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`
+            }}>
+              <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>{t.amount}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button onClick={() => setQty(q => Math.max(0.1, round2(q - step)))} style={stepperBtn()}>−</button>
+                  <input type="number" value={qty} onChange={(e) => setQty(Number(e.target.value))} style={inputStyle(dark)} />
+                  <button onClick={() => setQty(q => round2(q + step))} style={stepperBtn()}>+</button>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              flex: 1, background: dark ? '#1E293B' : '#fff', borderRadius: 20, padding: 16,
+              boxShadow: FIT.shadowSm, border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`
+            }}>
+              <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>{t.unit}</div>
+              <select value={unit} onChange={(e) => handleUnitChange(e.target.value as Unit)} style={selectStyle(dark)}>
+                {['g', 'ml', 'piece', 'cup', 'tbsp', 'tsp', 'serving'].map(u => <option key={u} value={u as Unit}>{t[`unit_${u as Unit}` as keyof typeof t] as string}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Meal Selection - MOVED HERE to avoid overlapping with bottom button */}
+          <div style={{ marginTop: 20, padding: '16px', background: dark ? 'rgba(255,255,255,0.02)' : '#F8FAFC', borderRadius: 20, border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}` }}>
+             <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', marginBottom: 12 }}>{t.atWhatTime}</div>
+             <div style={{ display: 'flex', gap: 8, overflow: 'auto', paddingBottom: 4 }}>
+                {['breakfast', 'lunch', 'dinner', 'snack'].map(m => (
+                  <Chip key={m} active={m === meal} size="sm" onClick={() => setMeal(m as any)}>
+                    {t[m as keyof typeof t]}
+                  </Chip>
+                ))}
+             </div>
+          </div>
+
+          {/* Tarkibi */}
+          <div style={{ marginTop: 24, paddingBottom: 20 }}>
+             <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text, marginBottom: 12 }}>{t.composition}</div>
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {['protein', 'carbs', 'fat'].map(k => (
+                  <div key={k} style={{ padding: 14, background: `${(FIT as any)[k]}10`, borderRadius: 16, border: `1px solid ${(FIT as any)[k]}30` }}>
+                     <div style={{ fontSize: 11, color: (FIT as any)[k], fontWeight: 800, textTransform: 'uppercase' }}>{t[k as keyof typeof t]}</div>
+                     <div style={{ fontSize: 18, fontWeight: 900, marginTop: 4, color: (FIT as any)[k] }}>{fmt(nutrients[k], 1)}g</div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FIXED BOTTOM ACTION - Solid, high contrast */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)',
-        borderTop: `1px solid ${FIT.border}`, padding: 16,
+        padding: '16px 20px 32px',
+        background: dark ? 'linear-gradient(to top, #0F172A, transparent)' : 'linear-gradient(to top, #fff 80%, transparent)',
+        zIndex: 100,
       }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((m) => (
-            <Chip key={m} active={m === meal} size="sm" onClick={() => setMeal(m)}>
-              {t[m]}
-            </Chip>
-          ))}
-        </div>
         <Button
           variant="primary" size="lg" full
           onClick={handleSave}
-          disabled={saved}
+          disabled={saved || saving}
+          style={{
+            height: 56, borderRadius: 18, fontSize: 16, fontWeight: 900,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+            background: saved ? '#10B981' : FIT.primary,
+            color: '#fff',
+            opacity: 1, // Ensure no transparency
+          }}
         >
-          {saved ? '✓ Qo\'shildi' : 'Kundaliga qo\'shish'}
+          {saved ? `✓ ${t.added}` : saving ? t.saving : t.addToDiary}
         </Button>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        select { -webkit-appearance: none; cursor: pointer; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      `}</style>
     </Phone>
   );
 }
 
 function stepperBtn(): React.CSSProperties {
   return {
-    width: 32, height: 32, borderRadius: 10, background: '#fff',
+    width: 36, height: 36, borderRadius: 10, background: FIT.primarySoft,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: FIT.shadowSm, fontSize: 16, fontWeight: 700,
-    border: 'none', cursor: 'pointer',
+    fontSize: 20, fontWeight: 800, color: FIT.primary, border: 'none', cursor: 'pointer',
   };
 }
 
-function unitLabel(u: Unit): string {
+function inputStyle(dark: boolean): React.CSSProperties {
+  return { 
+    width: 60, border: 'none', background: 'transparent',
+    fontSize: 22, fontWeight: 900, fontFamily: FIT.mono,
+    color: FIT.text, textAlign: 'center', outline: 'none'
+  };
+}
+
+function selectStyle(dark: boolean): React.CSSProperties {
   return {
-    g: 'gram', ml: 'ml', piece: 'dona', cup: 'piyola',
-    tbsp: 'osh qoshiq', tsp: 'chay qoshiq', serving: 'porsiya',
-  }[u];
+    width: '100%', border: 'none', background: 'transparent',
+    fontSize: 16, fontWeight: 700, color: FIT.text, outline: 'none'
+  };
 }
 
-function displayKey(k: string): string {
-  const map: Record<string, string> = {
-    vit_c: 'Vit C (mg)', vit_a: 'Vit A (mcg)', vit_d: 'Vit D (mcg)',
-    vit_b12: 'B12 (mcg)', vit_b6: 'B6 (mg)', vit_e: 'Vit E (mg)',
-    vit_k: 'Vit K (mcg)', iron: 'Temir (mg)', calcium: 'Ca (mg)',
-    zinc: 'Zn (mg)', magnesium: 'Mg (mg)', potassium: 'K (mg)',
-    sodium: 'Na (mg)', fiber: 'Tolali (g)', folate: 'Folat (mcg)',
-    vit_b1: 'B1 (mg)', vit_b2: 'B2 (mg)', vit_b3: 'B3 (mg)',
-  };
-  return map[k] ?? k;
-}
 
 function round2(n: number): number { return Math.round(n * 100) / 100; }

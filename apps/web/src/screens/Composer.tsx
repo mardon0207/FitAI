@@ -4,17 +4,15 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Phone, TopBar, Card, Chip, Button, MacroBar, FoodThumb } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
-import { FIT } from '@/design/tokens';
+import { FIT, type I18NStrings } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
 import { useComposer, type Cooking, type DraftIngredient } from '@/stores/composer';
 import { useDiary } from '@/stores/diary';
-import { getFood, resolveGrams } from '@/data/db';
+import { useFoods } from '@/api/hooks';
 import type { MealType, Unit } from '@fit/shared-types';
+import { resolveGrams } from '@/lib/nutrition';
 
-const COOKING_LABELS: Record<Cooking, string> = {
-  raw: 'Xom', boiled: 'Qaynatilgan', fried: 'Qovurilgan',
-  baked: 'Pishirilgan', grilled: 'Grilled',
-};
+const COOKING_METHODS = ['raw', 'boiled', 'fried', 'baked', 'grilled'] as const;
 
 const ALL_UNITS: Unit[] = ['g', 'ml', 'piece', 'cup', 'tbsp', 'tsp'];
 
@@ -28,13 +26,18 @@ export function ComposerScreen() {
   const draft = useComposer();
   const addComposed = useDiary((s) => s.addComposedMeal);
 
+  const slugs = useMemo(() => Array.from(new Set(draft.ingredients.map(i => i.slug))), [draft.ingredients]);
+  const { data: foodDetails = [] } = useFoods(slugs);
+  const foodIndex = useMemo(() => new Map(foodDetails.map(f => [String(f.id), f])), [foodDetails]);
+
   // Handle ?add=slug from Search navigation
   useEffect(() => {
     const addSlug = sp.get('add');
     if (addSlug) {
-      const food = getFood(addSlug);
-      if (food) draft.addIngredient(addSlug, food.defaultUnit);
-      // Clear the query param
+      // We don't have the food details yet, so we default to 'g'
+      // useFoods will pick up the new slug and fetch its details
+      draft.addIngredient(addSlug, 'g');
+      
       const next = new URLSearchParams(sp);
       next.delete('add');
       setSp(next, { replace: true });
@@ -47,11 +50,11 @@ export function ComposerScreen() {
     const micros: Record<string, number> = {};
 
     for (const ing of draft.ingredients) {
-      const food = getFood(ing.slug);
+      const food = foodIndex.get(ing.slug);
       if (!food) continue;
-      let grams = resolveGrams(food, ing.quantity, ing.unit);
+      let grams = resolveGrams(ing.quantity, ing.unit, food.gramsPerUnit);
       totalGrams += grams;
-      for (const [k, v] of Object.entries(food.per100g)) {
+      for (const [k, v] of Object.entries(food.nutrients)) {
         const val = (v * grams) / 100;
         if (k === 'kcal') kcal += val;
         else if (k === 'protein') protein += val;
@@ -69,19 +72,19 @@ export function ComposerScreen() {
     }
 
     return { kcal: Math.round(kcal), protein: round1(protein), carbs: round1(carbs), fat: round1(fat), totalGrams: round1(totalGrams), micros };
-  }, [draft.ingredients]);
+  }, [draft.ingredients, foodIndex]);
 
   const handleSave = () => {
     if (draft.ingredients.length === 0) return;
     const ingredientsForStore = draft.ingredients
       .map((ing) => {
-        const food = getFood(ing.slug);
+        const food = foodIndex.get(ing.slug);
         if (!food) return null;
-        let grams = resolveGrams(food, ing.quantity, ing.unit);
+        let grams = resolveGrams(ing.quantity, ing.unit, food.gramsPerUnit);
         if (ing.cooking === 'fried' && ing.addedOilMl) {
           grams += ing.addedOilMl * 0.92;
         }
-        return { slug: ing.slug, quantity: ing.quantity, unit: ing.unit, grams, per100g: food.per100g };
+        return { slug: ing.slug, quantity: ing.quantity, unit: ing.unit, grams, per100g: food.nutrients };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
 
@@ -105,20 +108,20 @@ export function ComposerScreen() {
     <Phone dark={dark}>
       <TopBar
         back onBack={() => navigate(-1)}
-        title="Ingredientlardan yig'ish"
+        title={t.assemble}
         subtitle={`${draft.ingredients.length} ta · ${totals.kcal} ${t.kcal}`}
         transparent
         right={
           draft.ingredients.length > 0 ? (
             <button
               type="button"
-              onClick={() => { if (confirm('Barchasini tozalash?')) draft.reset(); }}
+              onClick={() => { if (confirm(t.clearAll)) draft.reset(); }}
               style={{
                 fontSize: 12, color: FIT.danger, fontWeight: 600,
                 background: 'none', border: 'none', cursor: 'pointer',
               }}
             >
-              Tozalash
+              {t.clear}
             </button>
           ) : undefined
         }
@@ -132,14 +135,14 @@ export function ComposerScreen() {
           <input
             value={draft.name}
             onChange={(e) => draft.setName(e.target.value)}
-            placeholder="Ovqat nomi"
+            placeholder={t.mealName}
             style={{
               flex: 1, border: 'none', outline: 'none', fontSize: 14,
               fontFamily: FIT.sans, fontWeight: 600, background: 'transparent',
             }}
           />
           <span style={{ fontSize: 12, color: FIT.textMuted, fontFamily: FIT.mono }}>
-            {new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+            {new Date().toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : (lang === 'ru' ? 'ru-RU' : 'en-US'), { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
@@ -158,10 +161,10 @@ export function ComposerScreen() {
           }}>
             <div style={{ fontSize: 48, marginBottom: 8 }}>🧩</div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
-              Ingredientlarni qo&apos;shing
+              {t.addIngredients}
             </div>
             <div style={{ fontSize: 12, marginBottom: 20, lineHeight: 1.5 }}>
-              Masalan: 2 dona qovurilgan kolbasa + 2 dona qaynatilgan tuxum + 0.5 pomidor
+              {t.composerExample}
             </div>
           </div>
         ) : (
@@ -170,6 +173,7 @@ export function ComposerScreen() {
               key={ing.id}
               ing={ing}
               lang={lang}
+              foodIndex={foodIndex}
               onUpdate={(patch) => draft.updateIngredient(ing.id, patch)}
               onRemove={() => draft.removeIngredient(ing.id)}
               t={t}
@@ -195,10 +199,10 @@ export function ComposerScreen() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: FIT.primaryDark }}>
-              Ingredient qo&apos;shish
+              {t.addIngredient}
             </div>
             <div style={{ fontSize: 11, color: FIT.textMuted, marginTop: 2 }}>
-              86+ mahsulot, 18 milliy retsept
+              {t.composerSearchSub}
             </div>
           </div>
         </button>
@@ -216,7 +220,7 @@ export function ComposerScreen() {
                 fontSize: 10, color: FIT.textMuted, fontWeight: 700,
                 textTransform: 'uppercase', letterSpacing: 1,
               }}>
-                JAMI · {totals.totalGrams}g
+                {t.total} · {totals.totalGrams}g
               </div>
               <div style={{
                 fontSize: 30, fontWeight: 800, fontFamily: FIT.mono,
@@ -249,7 +253,7 @@ export function ComposerScreen() {
             </div>
           )}
           <Button variant="primary" size="md" full onClick={handleSave}>
-            Kundaliga qo&apos;shish ({t[draft.mealType]})
+            {t.addToDiary} ({t[draft.mealType]})
           </Button>
         </div>
       )}
@@ -260,26 +264,33 @@ export function ComposerScreen() {
 interface IngredientCardProps {
   ing: DraftIngredient;
   lang: 'uz' | 'ru' | 'en';
+  foodIndex: Map<string, any>;
   onUpdate: (patch: Partial<DraftIngredient>) => void;
   onRemove: () => void;
   t: ReturnType<typeof useT>;
 }
 
-function IngredientCard({ ing, lang, onUpdate, onRemove, t }: IngredientCardProps) {
-  const food = getFood(ing.slug);
-  if (!food) return null;
+function IngredientCard({ ing, lang, foodIndex, onUpdate, onRemove, t }: IngredientCardProps) {
+  const food = foodIndex.get(ing.slug);
+  if (!food) {
+    return (
+      <Card pad={14} style={{ marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="loader" style={{ width: 20, height: 20, border: `2px solid ${FIT.primarySoft}`, borderTopColor: FIT.primary, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      </Card>
+    );
+  }
 
-  const grams = resolveGrams(food, ing.quantity, ing.unit);
-  const kcal = Math.round(((food.per100g.kcal ?? 0) * grams) / 100);
+  const grams = resolveGrams(ing.quantity, ing.unit, food.grams_per_unit);
+  const kcal = Math.round(((food.nutrients.kcal ?? 0) * grams) / 100);
 
   return (
     <Card pad={14} style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', gap: 12 }}>
-        <FoodThumb emoji={food.emoji} photo={food.photoUrl} tone={food.isRecipe ? 'amber' : 'green'} size={44} />
+        <FoodThumb emoji={food.emoji} photo={food.photoUrl} tone={food.is_recipe ? 'amber' : 'green'} size={44} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ minWidth: 0, paddingRight: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>{food.namesAll[lang] ?? food.name}</div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{food.name}</div>
               <div style={{ fontSize: 11, color: FIT.textMuted }}>
                 {food.category ?? '·'} · ~{Math.round(grams)}g
               </div>
@@ -292,7 +303,7 @@ function IngredientCard({ ing, lang, onUpdate, onRemove, t }: IngredientCardProp
                 <div style={{ fontSize: 9, color: FIT.textMuted }}>{t.kcal}</div>
               </div>
               <button
-                type="button" onClick={onRemove} aria-label="Olib tashlash"
+                type="button" onClick={onRemove} aria-label={t.clear}
                 style={{
                   width: 20, height: 20, borderRadius: 10, border: 'none',
                   background: FIT.dangerSoft, color: FIT.danger, cursor: 'pointer',
@@ -332,13 +343,13 @@ function IngredientCard({ ing, lang, onUpdate, onRemove, t }: IngredientCardProp
                 fontSize: 12, fontWeight: 600, fontFamily: FIT.sans, cursor: 'pointer',
               }}
             >
-              {ALL_UNITS.map((u) => <option key={u} value={u}>{unitLabel(u)}</option>)}
-              {food.isRecipe && <option value="serving">porsiya</option>}
+              {ALL_UNITS.map((u) => <option key={u} value={u}>{t[`unit_${u}` as keyof I18NStrings] as string}</option>)}
+              {food.is_recipe && <option value="serving">{t.unit_serving}</option>}
             </select>
           </div>
 
           <div style={{ display: 'flex', gap: 4, marginTop: 10, flexWrap: 'wrap' }}>
-            {(Object.keys(COOKING_LABELS) as Cooking[]).slice(0, 4).map((c) => (
+            {COOKING_METHODS.map((c) => (
               <button
                 type="button" key={c}
                 onClick={() => onUpdate({ cooking: c })}
@@ -350,7 +361,7 @@ function IngredientCard({ ing, lang, onUpdate, onRemove, t }: IngredientCardProp
                   cursor: 'pointer',
                 }}
               >
-                {COOKING_LABELS[c]}
+                {t[`cooking_${c}`]}
               </button>
             ))}
           </div>
@@ -361,7 +372,7 @@ function IngredientCard({ ing, lang, onUpdate, onRemove, t }: IngredientCardProp
               borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ fontSize: 14 }}>🛢️</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#92400E' }}>Yog&apos;</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#92400E' }}>{t.oil}</span>
               <input
                 type="range" min={0} max={30}
                 value={ing.addedOilMl ?? 10}
@@ -388,9 +399,6 @@ function stepperBtn(color: string): React.CSSProperties {
   };
 }
 
-function unitLabel(u: Unit): string {
-  return { g: 'g', ml: 'ml', piece: 'dona', cup: 'piyola', tbsp: 'osh q', tsp: 'chay q', serving: 'porsiya' }[u];
-}
 
 function displayKey(k: string): string {
   const map: Record<string, string> = {

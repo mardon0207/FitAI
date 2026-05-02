@@ -1,17 +1,21 @@
-// Profile / Settings. Ported from design/screens-c.jsx::ScreenProfile.
-
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, TopBar, TabBar, Card, Button } from '@/design/primitives';
 import { Icon, type IconName } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
-import { useTabNav } from '@/App';
+import { useTabNav } from '@/hooks/useTabNav';
+import { useProfile } from '@/stores/profile';
+import { useAuth } from '@/stores/auth';
+import { useDiary } from '@/stores/diary';
+import { TweaksPanelContent } from '@/design/TweaksPanel';
 
 interface SettingItem {
   icon: IconName;
   name: string;
   value?: string;
   toggle?: boolean;
+  active?: boolean;
   highlight?: boolean;
   onClick?: () => void;
 }
@@ -26,195 +30,342 @@ export function ProfileScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
   const onTab = useTabNav();
-  const setLang = usePrefs((s) => s.setLang);
-  const setTheme = usePrefs((s) => s.setTheme);
-  const lang = usePrefs((s) => s.lang);
-  const theme = usePrefs((s) => s.theme);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [healthConnected, setHealthConnected] = useState(true);
+  const [reminders, setReminders] = useState({ food: true, water: true });
 
-  const langLabel = { uz: "O'zbekcha", ru: 'Русский', en: 'English' }[lang];
-  const themeLabel = { light: 'Svetlый', dark: 'Qorongu', auto: 'Avto' }[theme];
+  const profile = useProfile();
+  const diary = useDiary();
+  const auth = useAuth();
+  
+  // Calculate Streak
+  const streak = useMemo(() => {
+    const entries = diary.entries || [];
+    if (entries.length === 0) return 0;
 
+    const dates = new Set(entries.map(e => e.date));
+    let count = 0;
+    let d = new Date();
+    
+    // Safety limit to avoid infinite loops (max 365 days)
+    for (let i = 0; i < 365; i++) {
+      const currentYmd = d.toISOString().split('T')[0] as string;
+      if (dates.has(currentYmd)) {
+        count++;
+        d.setDate(d.getDate() - 1);
+      } else {
+        // If we haven't logged today, check if we logged yesterday to maintain the streak
+        if (count === 0 && i === 0) {
+          d.setDate(d.getDate() - 1);
+          const yesterdayYmd = d.toISOString().split('T')[0] as string;
+          if (dates.has(yesterdayYmd)) {
+            continue; // Start counting from yesterday
+          }
+        }
+        break;
+      }
+    }
+    return count;
+  }, [diary.entries]);
+
+  const totalMeals = (diary.entries || []).length;
+
+  const age = profile.birthDate 
+    ? Math.floor((new Date().getTime() - new Date(profile.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+    : profile.age || 0;
+
+  const handleEditProfile = () => {
+    const name = prompt(t.editName, profile.name || '');
+    if (name) profile.updateProfile({ name });
+  };
+
+  const handleEditMetric = (field: 'height' | 'weight', label: string) => {
+    const val = prompt(`${label} ${t.editMetric}`, String(profile[field] || ''));
+    if (val && !isNaN(Number(val))) {
+      profile.updateProfile({ [field]: Number(val) });
+    }
+  };
+
+  const handleLogout = () => {
+    if (confirm(t.logoutConfirm)) {
+      auth.logout();
+      profile.reset();
+      navigate('/login');
+    }
+  };
   const sections: Section[] = [
     {
-      title: "Sog'liq ma'lumotlari",
+      title: t.healthData,
       items: [
-        { icon: 'scale', name: "Bo'y/vazn", value: '178cm, 72.3kg' },
-        { icon: 'calendar', name: 'Yosh', value: '28 yosh' },
-        { icon: 'flame', name: 'Faollik', value: "O'rtacha" },
-        { icon: 'leaf', name: 'Ovqat cheklovlari', value: 'Halal' },
+        { icon: 'scale', name: `${t.weight}/${t.weight}`, value: `${profile.height}cm, ${profile.weight}kg`, onClick: () => handleEditMetric('weight', t.weight) },
+        { icon: 'calendar', name: t.today, value: profile.birthDate || t.notConnected, onClick: () => {
+          const bd = prompt('YYYY-MM-DD:', profile.birthDate || '');
+          if (bd) profile.updateProfile({ birthDate: bd });
+        } },
+        { icon: 'flame', name: t.activities, value: (t[`level_${profile.activityLevel}` as keyof typeof t] as string) || profile.activityLevel, onClick: () => {
+          const levels = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
+          const next = prompt('sedentary/light/moderate/active/very_active:', profile.activityLevel);
+          if (next && levels.includes(next)) profile.updateProfile({ activityLevel: next as any });
+        } },
+        { icon: 'leaf', name: t.halal, value: t.halal, onClick: () => alert(t.soon) },
       ],
     },
     {
-      title: 'Mening taomlarim',
+      title: t.connections,
       items: [
-        { icon: 'heart', name: "Saqlangan meal'lar", value: '12' },
-        { icon: 'diary', name: 'Mening retseptlarim', value: '4' },
-      ],
-    },
-    {
-      title: 'Birikmalar',
-      items: [
-        { icon: 'sparkle', name: 'Apple Health', value: 'Ulangan', highlight: true },
-        { icon: 'stats', name: 'Apple Watch', value: 'Ulanmagan' },
-      ],
-    },
-    {
-      title: 'Bildirishnomalar',
-      items: [
-        { icon: 'bell', name: 'Ovqat eslatmasi', toggle: true },
-        { icon: 'droplet', name: 'Suv eslatmasi', toggle: true },
-        { icon: 'alert', name: 'Yetishmovchilik', toggle: true },
-      ],
-    },
-    {
-      title: 'Ilova',
-      items: [
-        {
-          icon: 'globe', name: 'Til', value: langLabel,
-          onClick: () => setLang(lang === 'uz' ? 'ru' : lang === 'ru' ? 'en' : 'uz'),
+        { 
+          icon: 'heart', 
+          name: t.appleHealth, 
+          value: healthConnected ? t.connected : t.notConnected, 
+          highlight: healthConnected, 
+          onClick: () => setHealthConnected(!healthConnected) 
         },
-        {
-          icon: 'moon', name: 'Tema', value: themeLabel,
-          onClick: () => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'auto' : 'light'),
+        { icon: 'stats', name: t.appleWatch, value: t.notConnected, onClick: () => alert(t.soon) },
+      ],
+    },
+    {
+      title: t.reminders,
+      items: [
+        { 
+          icon: 'bell', 
+          name: t.addFood, 
+          toggle: true, 
+          active: reminders.food, 
+          onClick: () => setReminders((r: any) => ({ ...r, food: !r.food })) 
         },
-        { icon: 'settings', name: "O'lchov", value: 'Metric' },
+        { 
+          icon: 'droplet', 
+          name: t.water, 
+          toggle: true, 
+          active: reminders.water, 
+          onClick: () => setReminders((r: any) => ({ ...r, water: !r.water })) 
+        },
+      ],
+    },
+    {
+      title: t.appSettings,
+      items: [
+        { 
+          icon: 'settings', 
+          name: t.language, 
+          value: usePrefs.getState().lang === 'uz' ? 'O\'zbekcha' : (usePrefs.getState().lang === 'ru' ? 'Русский' : 'English'), 
+          onClick: () => {
+            const current = usePrefs.getState().lang;
+            const next = current === 'uz' ? 'ru' : 'uz';
+            usePrefs.getState().setLang(next);
+          }
+        },
+        { 
+          icon: 'moon', 
+          name: t.theme, 
+          value: dark ? t.dark : t.light, 
+          onClick: () => {
+            const next = dark ? 'light' : 'dark';
+            usePrefs.getState().setTheme(next);
+          }
+        },
+        { icon: 'scale', name: t.unit, value: t.metric },
       ],
     },
   ];
 
   return (
     <Phone dark={dark}>
-      <TopBar
-        title={t.profile}
-        transparent
-        right={<Icon name="settings" size={22} color={FIT.text} />}
+      <TopBar 
+        title={t.profile} transparent 
+        right={
+          <button 
+            onClick={() => setShowTweaks(true)}
+            style={{
+              width: 42, height: 42, borderRadius: 12,
+              background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: 'none', cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Icon name="settings" size={22} color={FIT.text} />
+          </button>
+        } 
       />
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
-        <Card pad={16} style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 32,
-            background: `linear-gradient(135deg, ${FIT.primary}, ${FIT.primaryDark})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 22, fontWeight: 800,
-          }}>
-            AK
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>Aziz Karimov</div>
-            <div style={{ fontSize: 12, color: FIT.textMuted }}>aziz@fitai.uz</div>
-            <div style={{
-              display: 'flex', gap: 8, marginTop: 6, fontSize: 11,
-              color: FIT.textMuted, fontFamily: FIT.mono,
-            }}>
-              <span>🔥 28 kun</span>
-              <span>·</span>
-              <span>2,340 ovqat</span>
-            </div>
-          </div>
-          <Icon name="edit" size={18} color={FIT.textMuted} />
+      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 100px' }}>
+        <Card pad={20} style={{ margin: '16px 0 24px', background: 'transparent', border: 'none' }}>
+           <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+             <div style={{ position: 'relative' }}>
+               <div style={{
+                 width: 84, height: 84, borderRadius: 32,
+                 background: `linear-gradient(135deg, ${FIT.primary}, ${FIT.primaryDark})`,
+                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                 color: '#fff', fontSize: 28, fontWeight: 900,
+                 boxShadow: `0 10px 25px ${FIT.primary}44`,
+               }}>
+                 {(profile.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+               </div>
+               <button onClick={handleEditProfile} style={{
+                 position: 'absolute', bottom: -4, right: -4,
+                 width: 28, height: 28, borderRadius: 10, background: '#fff',
+                 border: `1px solid ${FIT.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                 cursor: 'pointer', boxShadow: FIT.shadowSm
+               }}>
+                  <Icon name="edit" size={14} color={FIT.primary} />
+               </button>
+             </div>
+             <div style={{ flex: 1 }}>
+               <div style={{ fontSize: 22, fontWeight: 900, color: FIT.text, letterSpacing: -0.5 }}>
+                 {profile.name || 'Admin'}
+               </div>
+               <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600, marginTop: 2 }}>
+                 {profile.email || 'Email...'}
+               </div>
+               <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                   <span style={{ fontSize: 14 }}>🔥</span>
+                   <span style={{ fontSize: 13, fontWeight: 800, color: FIT.text }}>{streak} {t.days}</span>
+                 </div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                   <span style={{ fontSize: 14 }}>🍽️</span>
+                   <span style={{ fontSize: 13, fontWeight: 800, color: FIT.text }}>{totalMeals.toLocaleString()} {t.meals}</span>
+                 </div>
+               </div>
+             </div>
+           </div>
         </Card>
 
-        <Card
-          pad={14}
-          style={{
-            background: `linear-gradient(135deg, ${FIT.primarySoft}, ${FIT.accentSoft})`,
-            border: 'none', marginBottom: 16,
-          }}
-        >
-          <div style={{
-            fontSize: 11, color: FIT.primaryDark, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: 1,
-          }}>
-            Sizning maqsadingiz
-          </div>
-          <div style={{ fontSize: 17, fontWeight: 700, marginTop: 4 }}>Vazn kamaytirish</div>
-          <div style={{ fontSize: 12, color: FIT.text, marginTop: 4 }}>
-            72.3kg → 68kg · 2,150 {t.kcal}/kun
-          </div>
-          <div style={{ height: 5, background: 'rgba(255,255,255,0.5)', borderRadius: 3, marginTop: 10 }}>
-            <div style={{ height: '100%', width: '40%', background: FIT.primary, borderRadius: 3 }} />
-          </div>
+        <Card pad={20} style={{ 
+          background: dark ? 'rgba(255,255,255,0.03)' : 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)', 
+          border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#E2E8F0'}`,
+          marginBottom: 24,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+        }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+             <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{t.goalWeight}</div>
+             <Icon name="trophy" size={16} color={FIT.primary} />
+           </div>
+           <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text }}>
+             {profile.goal === 'lose' ? t.goal_lose : profile.goal === 'gain' ? t.goal_gain : t.goal_maintain}
+           </div>
+           
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12 }}>
+              <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600 }}>
+                {profile.weight}kg → {profile.goal === 'lose' ? profile.weight - 5 : profile.goal === 'gain' ? profile.weight + 5 : profile.weight}kg
+              </div>
+              <div style={{ fontSize: 13, color: FIT.primary, fontWeight: 800 }}>
+                {profile.targetKcal.toLocaleString()} {t.targetKcal}
+              </div>
+           </div>
+
+           <div style={{ height: 8, background: dark ? 'rgba(255,255,255,0.05)' : '#E2E8F0', borderRadius: 4, marginTop: 12, overflow: 'hidden' }}>
+              <div style={{ width: '45%', height: '100%', background: `linear-gradient(90deg, ${FIT.primary}, ${FIT.accent})`, borderRadius: 4 }} />
+           </div>
         </Card>
 
         {sections.map((s) => (
-          <div key={s.title} style={{ marginBottom: 16 }}>
-            <div style={{
-              fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4,
-            }}>
+          <div key={s.title} style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, paddingLeft: 4 }}>
               {s.title}
             </div>
-            <Card pad={0}>
+            <div style={{ 
+              background: dark ? 'rgba(255,255,255,0.02)' : '#fff', borderRadius: 24, overflow: 'hidden',
+              border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`,
+              boxShadow: FIT.shadowSm
+            }}>
               {s.items.map((it, i) => (
-                <button
-                  type="button"
+                <div
                   key={it.name}
                   onClick={it.onClick}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px', width: '100%', background: 'transparent',
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    padding: '16px 20px', width: '100%', background: 'transparent',
                     border: 'none', cursor: it.onClick ? 'pointer' : 'default', textAlign: 'left',
-                    borderBottom: i < s.items.length - 1 ? `1px solid ${FIT.borderSoft}` : 'none',
+                    borderBottom: i < s.items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,0.03)' : '#F1F5F9'}` : 'none',
+                    transition: 'background 0.2s'
                   }}
                 >
                   <div style={{
-                    width: 32, height: 32, borderRadius: 10,
-                    background: FIT.primarySoft,
+                    width: 36, height: 36, borderRadius: 12,
+                    background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon name={it.icon} size={16} color={FIT.primary} />
+                    <Icon name={it.icon} size={18} color={it.highlight ? FIT.primary : FIT.textMuted} />
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 500, flex: 1, color: FIT.text }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, flex: 1, color: FIT.text }}>
                     {it.name}
                   </span>
-                  {it.toggle ? (
-                    <Toggle on />
-                  ) : (
-                    <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {it.toggle ? (
+                      <div 
+                        onClick={(e) => { e.stopPropagation(); it.onClick?.(); }}
+                        style={{ 
+                          width: 44, height: 24, borderRadius: 12, 
+                          background: it.active ? FIT.primary : (dark ? '#334155' : '#E2E8F0'), 
+                          position: 'relative', cursor: 'pointer',
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        <div style={{ 
+                          width: 18, height: 18, borderRadius: 9, background: '#fff', 
+                          position: 'absolute', 
+                          left: it.active ? 24 : 3, top: 3,
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }} />
+                      </div>
+                    ) : (
                       <span style={{
-                        fontSize: 12,
+                        fontSize: 13,
                         color: it.highlight ? FIT.primary : FIT.textMuted,
-                        fontWeight: it.highlight ? 700 : 500,
+                        fontWeight: 700,
                       }}>
                         {it.value}
                       </span>
-                      <Icon name="chevron" size={14} color={FIT.textSubtle} />
-                    </>
-                  )}
-                </button>
+                    )}
+                    {it.onClick && <Icon name="chevron" size={14} color={FIT.textSubtle} />}
+                  </div>
+                </div>
               ))}
-            </Card>
+            </div>
           </div>
         ))}
 
-        <Button variant="secondary" full onClick={() => navigate('/login')}>
-          Chiqish
-        </Button>
+        <button 
+          onClick={handleLogout}
+          style={{ 
+            width: '100%', height: 54, borderRadius: 18, fontSize: 15, fontWeight: 800, marginTop: 12, 
+            color: FIT.danger, border: 'none', background: dark ? 'rgba(239,68,68,0.1)' : '#FEF2F2',
+            cursor: 'pointer'
+          }}
+        >
+          {t.logout}
+        </button>
       </div>
 
+      {/* Tweaks Modal Overlay */}
+      {showTweaks && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1000,
+          background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'flex-end',
+        }}>
+          <div style={{
+            width: '100%', background: dark ? '#1E293B' : '#fff', 
+            borderRadius: '32px 32px 0 0', padding: 24, paddingBottom: 40,
+            boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
+            <TweaksPanelContent onClose={() => setShowTweaks(false)} />
+          </div>
+        </div>
+      )}
+
       <TabBar
-        active="profile"
-        onTab={onTab}
+        active="profile" onTab={onTab}
         labels={{ home: t.home, diary: t.diary, stats: t.stats, profile: t.profile }}
         dark={dark}
       />
+      <style>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
     </Phone>
-  );
-}
-
-function Toggle({ on }: { on: boolean }) {
-  return (
-    <div style={{
-      width: 40, height: 22, borderRadius: 11,
-      background: on ? FIT.primary : FIT.border,
-      position: 'relative',
-    }}>
-      <div style={{
-        position: 'absolute', top: 2, left: on ? 20 : 2,
-        width: 18, height: 18, borderRadius: 9, background: '#fff',
-        transition: 'left 150ms',
-      }} />
-    </div>
   );
 }

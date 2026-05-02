@@ -1,270 +1,475 @@
-// Stats / Progress charts. Ported from design/screens-c.jsx::ScreenStats.
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Phone, TopBar, TabBar, Card } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
-import { useTabNav } from '@/App';
+import { useTabNav } from '@/hooks/useTabNav';
+import { useDiary } from '@/stores/diary';
+import { useProfile } from '@/stores/profile';
+import { ymd, todayYmd } from '@/data/date';
 
-const PERIODS = ['Hafta', 'Oy', '3 oy', 'Yil'] as const;
-const DAYS_UZ = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
+const PERIOD_KEYS = ['week', 'month', 'year'] as const;
+const ACTIVITY_COLORS = [FIT.accent, FIT.primary, FIT.protein, FIT.fat, FIT.carbs];
 
 export function StatsScreen() {
   const t = useT();
   const dark = usePrefs((s) => s.theme === 'dark');
+  const lang = usePrefs((s) => s.lang);
   const onTab = useTabNav();
-  const [period, setPeriod] = useState<(typeof PERIODS)[number]>('Hafta');
+  const [period, setPeriod] = useState<(typeof PERIOD_KEYS)[number]>('week');
 
-  const caloriesData = [1820, 2050, 1900, 2180, 1780, 2240, 1980];
-  const calMax = 2400;
-  const weightData = [73.1, 72.9, 73.0, 72.7, 72.5, 72.6, 72.3];
+  const targetKcal = useProfile(s => s.targetKcal) || 2000;
+  const entries = useDiary(s => s.entries) || [];
+  const activities = useDiary(s => s.activities) || [];
+  const weightRecords = useDiary(s => s.weight) || [];
+  const waterRecords = useDiary(s => s.water) || [];
+
+  const daysCount = period === 'week' ? 7 : period === 'month' ? 30 : 12; // 12 months for Year
+  const today = new Date();
+
+  // Data generation for the selected period
+  const dataPoints = useMemo(() => {
+    if (period === 'year') {
+      return Array.from({ length: 12 }).map((_, i) => {
+        const d = new Date(today.getFullYear(), i, 1);
+        const mKey = `${d.getFullYear()}-${String(i + 1).padStart(2, '0')}`;
+        return {
+          label: d.toLocaleString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' }),
+          dateKey: mKey,
+          isMonth: true
+        };
+      });
+    }
+    return Array.from({ length: daysCount }).map((_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (daysCount - 1 - i));
+      const dKey = ymd(d);
+      return {
+        label: daysCount === 7 ? t.daysShort[(d.getDay() + 6) % 7] : d.getDate().toString(),
+        dateKey: dKey,
+        isMonth: false
+      };
+    });
+  }, [period, daysCount, t.daysShort, lang]);
+
+  const caloriesData = useMemo(() => dataPoints.map(p => {
+    const dayEntries = p.isMonth 
+      ? entries.filter(e => e.date.startsWith(p.dateKey))
+      : entries.filter(e => e.date === p.dateKey);
+    const kcal = dayEntries.reduce((sum, e) => sum + e.kcal, 0);
+    return p.isMonth ? Math.round(kcal / 30) : kcal; // Avg daily for month in Year view
+  }), [entries, dataPoints]);
+
+  const burnedData = useMemo(() => dataPoints.map(p => {
+    const dayActs = p.isMonth 
+      ? activities.filter(a => a.date.startsWith(p.dateKey))
+      : activities.filter(a => a.date === p.dateKey);
+    const kcal = dayActs.reduce((sum, a) => sum + (a.kcalBurned || 0), 0);
+    return p.isMonth ? Math.round(kcal / 30) : kcal;
+  }), [activities, dataPoints]);
+
+  const weightData = useMemo(() => dataPoints.map(p => {
+    // For weight, we take the last record of that period
+    const records = p.isMonth
+      ? weightRecords.filter(r => r.date.startsWith(p.dateKey))
+      : weightRecords.filter(r => r.date === p.dateKey);
+    
+    const last = records[records.length - 1];
+    if (last) return last.kg;
+    
+    // If no record for this day/month, find the closest previous one
+    const prevRecords = weightRecords.filter(r => r.date <= p.dateKey).sort((a, b) => b.date.localeCompare(a.date));
+    return prevRecords[0]?.kg || null;
+  }), [weightRecords, dataPoints]);
+
+  const waterData = useMemo(() => dataPoints.map(p => {
+    const records = p.isMonth
+      ? waterRecords.filter(r => r.date.startsWith(p.dateKey))
+      : waterRecords.filter(r => r.date === p.dateKey);
+    const ml = records.reduce((sum, r) => sum + r.ml, 0);
+    return p.isMonth ? ml / 1000 : ml; // Liters for year, ml for week/month
+  }), [waterRecords, dataPoints]);
+
+  const avgKcal = Math.round(caloriesData.reduce((a, b) => a + b, 0) / dataPoints.length);
+  const avgBurned = Math.round(burnedData.reduce((a, b) => a + b, 0) / dataPoints.length);
+  const currentWeight = weightRecords[weightRecords.length - 1]?.kg ?? '—';
+
+  const weightTrend = useMemo(() => {
+    const valid = weightRecords.filter(r => r && r.kg).sort((a, b) => a.addedAt - b.addedAt);
+    if (valid.length < 2) return null;
+    const last = valid[valid.length - 1];
+    const prev = valid[valid.length - 2];
+    if (!last || !prev) return null;
+    return last.kg - prev.kg;
+  }, [weightRecords]);
+
+  const weightChangeStr = useMemo(() => {
+    const first = weightRecords[0];
+    const last = weightRecords[weightRecords.length - 1];
+    if (weightRecords.length > 1 && first && last) {
+      return `${t.change}: ${(last.kg - first.kg).toFixed(1)} kg`;
+    }
+    return t.noData;
+  }, [weightRecords, t.stats]);
+
+  const kcalTrend = avgKcal - targetKcal;
+
+  // Stats Card data
+  const statsCards = [
+    { 
+      icon: '🍎', 
+      label: t.intake, 
+      value: avgKcal, 
+      unit: t.kcal, 
+      color: FIT.primary,
+      trend: kcalTrend,
+      trendUnit: t.kcal
+    },
+    { 
+      icon: '🔥', 
+      label: t.burned, 
+      value: avgBurned, 
+      unit: t.kcal, 
+      color: FIT.accent 
+    },
+    { 
+      icon: '⚖️', 
+      label: t.weight, 
+      value: currentWeight, 
+      unit: 'kg', 
+      color: FIT.protein,
+      trend: weightTrend,
+      trendUnit: 'kg'
+    },
+    { 
+      icon: '💧', 
+      label: t.water, 
+      value: (waterData.reduce((a, b) => a + b, 0) / (dataPoints.length || 1)).toFixed(1), 
+      unit: period === 'year' ? 'L' : t.ml, 
+      color: '#3B82F6' 
+    },
+  ];
 
   return (
     <Phone dark={dark}>
-      <TopBar
-        title={t.stats}
-        transparent
-        right={<Icon name="filter" size={20} color={FIT.text} />}
-      />
+      <TopBar title={t.stats} transparent right={<Icon name="filter" size={20} color={FIT.text} />} />
 
-      <div style={{ padding: '0 20px 8px' }}>
-        <div style={{ display: 'flex', background: FIT.surfaceAlt, borderRadius: 10, padding: 3 }}>
-          {PERIODS.map((p) => {
+      <div style={{ padding: '0 20px 16px' }}>
+        <div style={{ 
+          display: 'flex', background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', 
+          borderRadius: 14, padding: 4
+        }}>
+          {PERIOD_KEYS.map((p) => {
             const active = p === period;
             return (
               <button
-                type="button"
                 key={p}
                 onClick={() => setPeriod(p)}
                 style={{
-                  flex: 1, textAlign: 'center', padding: '7px 0', borderRadius: 8,
-                  background: active ? '#fff' : 'transparent',
-                  boxShadow: active ? FIT.shadowSm : 'none',
-                  fontSize: 12, fontWeight: 600,
+                  flex: 1, padding: '8px 0', borderRadius: 10, border: 'none',
+                  background: active ? (dark ? '#334155' : '#fff') : 'transparent',
                   color: active ? FIT.text : FIT.textMuted,
-                  border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: active ? FIT.shadowSm : 'none'
                 }}
               >
-                {p}
+                {t[p]}
               </button>
             );
           })}
         </div>
-        <div style={{ fontSize: 11, color: FIT.textMuted, marginTop: 6, fontFamily: FIT.mono }}>
-          14 Apr – 20 Apr 2026
-        </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '8px 20px 20px' }}>
-        {/* KPI cards */}
-        <div style={{ display: 'flex', gap: 10, overflow: 'auto', marginBottom: 16, paddingBottom: 4 }}>
-          {[
-            { icon: '🔥', label: "O'rt. kaloriya", value: '1,980', unit: t.kcal, trend: '↑ 2%', color: FIT.primary },
-            { icon: '⚖️', label: t.weight, value: '-0.8', unit: 'kg', trend: 'hafta', color: FIT.protein },
-            { icon: '🚶', label: t.steps, value: '7,420', unit: '/kun', trend: '↑ 12%', color: FIT.accent },
-            { icon: '💧', label: t.water, value: '7.1', unit: t.glass, trend: '88%', color: '#3B82F6' },
-          ].map((s) => (
-            <Card key={s.label} pad={14} style={{ minWidth: 150, flexShrink: 0 }}>
-              <div style={{ fontSize: 18 }}>{s.icon}</div>
-              <div style={{ fontSize: 11, color: FIT.textMuted, marginTop: 4, fontWeight: 600 }}>
-                {s.label}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 4 }}>
-                <span style={{
-                  fontSize: 22, fontWeight: 800, fontFamily: FIT.mono,
-                  letterSpacing: -0.5, color: s.color,
-                }}>
-                  {s.value}
-                </span>
-                <span style={{ fontSize: 10, color: FIT.textMuted }}>{s.unit}</span>
-              </div>
-              <div style={{ fontSize: 10, color: FIT.textMuted, marginTop: 2, fontFamily: FIT.mono }}>
-                {s.trend}
-              </div>
-            </Card>
-          ))}
+      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 100px' }}>
+        {/* KPI Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          {statsCards.map(c => <StatCard key={c.label} {...c} />)}
         </div>
 
-        {/* Calories chart */}
-        <Card pad={16} style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Kaloriya</div>
-          <div style={{ fontSize: 11, color: FIT.textMuted, fontFamily: FIT.mono, marginBottom: 14 }}>
-            Maqsad: 2,150 {t.kcal}/kun
-          </div>
-          <svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="gcal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={FIT.primary} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={FIT.primary} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <line
-              x1="0" y1={130 - (2150 / calMax) * 110}
-              x2="300" y2={130 - (2150 / calMax) * 110}
-              stroke={FIT.textSubtle} strokeDasharray="3 4" strokeWidth="1"
-            />
-            <path
-              d={
-                'M ' +
-                caloriesData.map((v, i) => `${i * (300 / 6)},${130 - (v / calMax) * 110}`).join(' L ') +
-                ' L 300,130 L 0,130 Z'
-              }
-              fill="url(#gcal)"
-            />
-            <path
-              d={
-                'M ' +
-                caloriesData.map((v, i) => `${i * (300 / 6)},${130 - (v / calMax) * 110}`).join(' L ')
-              }
-              fill="none" stroke={FIT.primary} strokeWidth="2.5" strokeLinecap="round"
-            />
-            {caloriesData.map((v, i) => (
-              <circle
-                key={i}
-                cx={i * (300 / 6)}
-                cy={130 - (v / calMax) * 110}
-                r={i === caloriesData.length - 2 ? 5 : 3}
-                fill={FIT.primary}
-                stroke="#fff"
-                strokeWidth="2"
-              />
-            ))}
-          </svg>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', fontSize: 10,
-            color: FIT.textMuted, fontFamily: FIT.mono, marginTop: 6,
-          }}>
-            {DAYS_UZ.map((d) => <span key={d}>{d}</span>)}
-          </div>
+        {/* Calories Trend Chart (Consumed vs Burned) */}
+        <ChartCard 
+          title={t.kcalBalance} 
+          subtitle={`${t.goal}: ${targetKcal} ${t.kcal}/${t.days}`}
+          data={caloriesData}
+          secondaryData={burnedData}
+          labels={dataPoints.map(p => p.label)}
+          max={Math.max(...caloriesData, ...burnedData, targetKcal) * 1.2}
+          target={targetKcal}
+          dark={dark}
+        />
+
+        {/* Weight Progress Chart */}
+        <ChartCard 
+          title={t.weightTrend} 
+          subtitle={weightChangeStr}
+          data={weightData.filter((v): v is number => v !== null)}
+          color={FIT.protein}
+          labels={dataPoints.filter((_, i) => weightData[i] !== null).map(p => p.label)}
+          max={Math.max(...weightData.filter((v): v is number => v !== null), 100) + 5}
+          min={Math.min(...weightData.filter((v): v is number => v !== null), 50) - 5}
+          dark={dark}
+          showArea={false}
+        />
+
+        {/* Activity Mix Breakdown */}
+        <Card pad={0} style={{ marginBottom: 24 }}>
+           <div style={{ padding: 20 }}>
+             <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text, marginBottom: 16 }}>{t.activities}</div>
+             <ActivityMix activities={activities} t={t} dark={dark} />
+           </div>
         </Card>
 
-        {/* Macro donut */}
-        <Card pad={16} style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Makro taqsimoti</div>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-            <div style={{ width: 120, height: 120, position: 'relative' }}>
-              <svg width="120" height="120" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="60" cy="60" r="50" fill="none" stroke={FIT.protein} strokeWidth="18"
-                  strokeDasharray={`${0.22 * 314} ${314}`} />
-                <circle cx="60" cy="60" r="50" fill="none" stroke={FIT.carbs} strokeWidth="18"
-                  strokeDasharray={`${0.5 * 314} ${314}`} strokeDashoffset={-0.22 * 314} />
-                <circle cx="60" cy="60" r="50" fill="none" stroke={FIT.fat} strokeWidth="18"
-                  strokeDasharray={`${0.28 * 314} ${314}`} strokeDashoffset={-0.72 * 314} />
-              </svg>
-              <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <div style={{ fontSize: 10, color: FIT.textMuted, fontWeight: 600 }}>JAMI</div>
-                <div style={{ fontSize: 18, fontWeight: 800, fontFamily: FIT.mono }}>1,980</div>
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              {[
-                { n: t.protein, v: '108g', p: '22%', c: FIT.protein },
-                { n: t.carbs, v: '248g', p: '50%', c: FIT.carbs },
-                { n: t.fat, v: '62g', p: '28%', c: FIT.fat },
-              ].map((m) => (
-                <div key={m.n} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
-                }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 5, background: m.c }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{m.n}</span>
-                  <span style={{ fontSize: 12, fontFamily: FIT.mono, fontWeight: 700 }}>{m.v}</span>
-                  <span style={{ fontSize: 11, color: FIT.textMuted, fontFamily: FIT.mono, width: 32 }}>
-                    {m.p}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* Daily History List (Only for Week view) */}
+      {period === 'week' && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="calendar" size={20} color={FIT.primary} />
+            {t.dailyHistory}
           </div>
-        </Card>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[...dataPoints].reverse().map((d, i) => {
+                const kcalIn = caloriesData[dataPoints.length - 1 - i] || 0;
+                const kcalOut = burnedData[dataPoints.length - 1 - i] || 0;
+                const weight = weightData[dataPoints.length - 1 - i];
+                const isToday = d.dateKey === todayYmd();
 
-        {/* Weight trend */}
-        <Card pad={16} style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>Vazn trendi</div>
-            <div style={{ fontSize: 11, color: FIT.primary, fontWeight: 700 }}>+ Yozish</div>
-          </div>
-          <svg width="100%" height="80" viewBox="0 0 300 80" preserveAspectRatio="none">
-            {weightData.map((w, i) => {
-              const y = ((73.2 - w) / 1) * 60 + 10;
-              const prevW = i > 0 ? weightData[i - 1] : null;
-              const prevY = prevW !== undefined && prevW !== null ? ((73.2 - prevW) / 1) * 60 + 10 : null;
-              return (
-                <g key={i}>
-                  {i > 0 && prevY !== null && (
-                    <line x1={(i - 1) * 50} y1={prevY} x2={i * 50} y2={y} stroke={FIT.protein} strokeWidth="2" />
-                  )}
-                  <circle cx={i * 50} cy={y} r="4" fill={FIT.protein} stroke="#fff" strokeWidth="2" />
-                </g>
-              );
-            })}
-          </svg>
-        </Card>
-
-        {/* Nutrient compliance */}
-        <Card pad={16} style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Nutrient qoplam</div>
-          {[
-            { n: 'Temir', p: 32, c: FIT.danger },
-            { n: 'B12', p: 45, c: FIT.danger },
-            { n: 'Vit D', p: 58, c: FIT.accent },
-            { n: 'Kalsiy', p: 72, c: FIT.accent },
-            { n: 'Vit C', p: 96, c: FIT.primary },
-          ].map((n) => (
-            <div key={n.n} style={{ marginBottom: 8 }}>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3,
-              }}>
-                <span style={{ fontWeight: 600 }}>{n.n}</span>
-                <span style={{ fontFamily: FIT.mono, fontWeight: 700, color: n.c }}>{n.p}%</span>
-              </div>
-              <div style={{ height: 5, background: `${n.c}22`, borderRadius: 3 }}>
-                <div style={{ height: '100%', width: `${n.p}%`, background: n.c, borderRadius: 3 }} />
-              </div>
-            </div>
-          ))}
-        </Card>
-
-        {/* Streak */}
-        <Card pad={16} style={{
-          background: `linear-gradient(135deg, ${FIT.primarySoft}, ${FIT.accentSoft})`,
-          border: 'none',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>🔥</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>5 kunlik kombо</div>
-              <div style={{ fontSize: 11, color: FIT.textMuted, marginTop: 2 }}>
-                Kuniga ovqat yozdingiz
-              </div>
-            </div>
-            <div style={{
-              fontSize: 24, fontWeight: 800, fontFamily: FIT.mono, color: FIT.primary,
-            }}>
-              5
+                return (
+                  <Card key={d.dateKey} pad={14} style={{ 
+                    border: isToday ? `1px solid ${FIT.primary}44` : 'none',
+                    background: isToday ? (dark ? 'rgba(16,185,129,0.05)' : '#F0FDF4') : (dark ? 'rgba(255,255,255,0.02)' : '#fff')
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: isToday ? FIT.primary : FIT.text }}>
+                          {isToday ? t.today : d.label}
+                          <span style={{ fontSize: 10, color: FIT.textMuted, fontWeight: 600, marginLeft: 8 }}>{d.dateKey.split('-').slice(1).reverse().join('.')}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
+                            <span style={{ color: FIT.primary }}>↓</span> {kcalIn} {t.kcal}
+                          </div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
+                            <span style={{ color: FIT.accent }}>↑</span> {kcalOut} {t.kcal}
+                          </div>
+                          {weight && (
+                            <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
+                              <span style={{ color: FIT.protein }}>⚖️</span> {weight} kg
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        width: 32, height: 32, borderRadius: 10, 
+                        background: kcalIn <= targetKcal ? (dark ? '#064E3B' : '#DCFCE7') : (dark ? '#7F1D1D' : '#FEE2E2'),
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        <Icon 
+                          name={kcalIn <= targetKcal ? 'check' : 'alert'} 
+                          size={18} 
+                          color={kcalIn <= targetKcal ? '#10B981' : '#EF4444'} 
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 3, marginTop: 10 }}>
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} style={{
-                flex: 1, height: 22, borderRadius: 4,
-                background: i < 5 ? FIT.primary : '#fff',
-              }} />
-            ))}
-          </div>
-        </Card>
+        )}
       </div>
 
       <TabBar
-        active="stats"
-        onTab={onTab}
+        active="stats" onTab={onTab}
         labels={{ home: t.home, diary: t.diary, stats: t.stats, profile: t.profile }}
         dark={dark}
       />
     </Phone>
+  );
+}
+
+function StatCard({ icon, label, value, unit, color, trend, trendUnit }: any) {
+  const isNegative = trend < 0;
+  const absTrend = trend ? Math.abs(trend).toFixed(1) : null;
+  
+  return (
+    <Card pad={16} style={{ border: 'none', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 18 }}>{icon}</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase' }}>{label}</span>
+          <span style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 600 }}>{useT().average}</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span style={{ fontSize: 24, fontWeight: 900, color: color, fontFamily: FIT.mono }}>{value}</span>
+        <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{unit}</span>
+      </div>
+      {trend !== undefined && trend !== null && (
+        <div style={{ 
+          marginTop: 8, 
+          fontSize: 10, 
+          fontWeight: 800, 
+          color: (label === 'Vazn' ? (isNegative ? '#10B981' : '#EF4444') : (isNegative ? '#EF4444' : '#10B981')),
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          {isNegative ? '↓' : '↑'} {absTrend}{trendUnit}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ChartCard({ title, subtitle, data, secondaryData, labels, max, min = 0, target, color = FIT.primary, dark, showArea = true }: any) {
+  const height = 160;
+  const width = 300;
+  const range = max - min;
+  
+  const getX = (i: number) => (i / (data.length - 1)) * width;
+  const getY = (v: number) => height - ((v - min) / range) * height;
+
+  const points = data.map((v: number, i: number) => `${getX(i)},${getY(v)}`).join(' ');
+  const secondaryPoints = secondaryData?.map((v: number, i: number) => `${getX(i)},${getY(v)}`).join(' ');
+
+  return (
+    <Card pad={20} style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text }}>{title}</div>
+        <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{subtitle}</div>
+      </div>
+      
+      <div style={{ height, position: 'relative' }}>
+        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+          {/* Target Line */}
+          {target && (
+            <line x1="0" y1={getY(target)} x2={width} y2={getY(target)} stroke={dark ? '#334155' : '#E2E8F0'} strokeDasharray="4 4" />
+          )}
+
+          {/* Main Area */}
+          {showArea && (
+            <path d={`M 0,${height} L ${points} L ${width},${height} Z`} fill={`url(#grad-${title})`} opacity="0.3" />
+          )}
+          <defs>
+            <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Secondary Line (Burned) */}
+          {secondaryData && (
+            <path d={`M ${secondaryPoints}`} fill="none" stroke={FIT.accent} strokeWidth="2" strokeLinecap="round" strokeDasharray="4 4" />
+          )}
+
+          {/* Main Line */}
+          <path d={`M ${points}`} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          
+          {/* Points */}
+          {data.length < 15 && data.map((v: number, i: number) => (
+            <circle key={i} cx={getX(i)} cy={getY(v)} r="4" fill={color} stroke={dark ? '#1e293b' : '#fff'} strokeWidth="2" />
+          ))}
+        </svg>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+         {labels.filter((_:any, i:number) => labels.length < 15 || i % 3 === 0).map((l: string, i: number) => (
+           <span key={i} style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 700, textAlign: 'center' }}>{l}</span>
+         ))}
+      </div>
+    </Card>
+  );
+}
+
+function ActivityMix({ activities, t, dark }: any) {
+  const mix = useMemo(() => {
+    const counts: Record<string, { kcal: number, label: string, emoji: string }> = {};
+    activities.forEach((a: any) => {
+      const type = a.type || 'unknown';
+      if (!counts[type]) counts[type] = { kcal: 0, label: a.label || t.other, emoji: '🏃' };
+      counts[type].kcal += (a.kcalBurned || 0);
+    });
+    // Sort by kcal and take top 5
+    return Object.entries(counts).sort((a, b) => b[1].kcal - a[1].kcal).slice(0, 5);
+  }, [activities]);
+
+  if (mix.length === 0) return <div style={{ fontSize: 13, color: FIT.textMuted }}>{t.noData}</div>;
+
+  const total = mix.reduce((s: number, m: any) => s + m[1].kcal, 0);
+
+  // SVG Donut calculation
+  const size = 110;
+  const center = size / 2;
+  const radius = 40;
+  const strokeWidth = 14;
+  const circumference = 2 * Math.PI * radius;
+
+  let currentOffset = 0;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+      {/* Donut Chart */}
+      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Background circle for "empty" state */}
+          <circle 
+            cx={center} cy={center} r={radius} 
+            fill="none" stroke={dark ? '#1E293B' : '#F1F5F9'} 
+            strokeWidth={strokeWidth} 
+          />
+          {mix.map(([id, data], i) => {
+            const pct = data.kcal / total;
+            const sliceLength = pct * circumference;
+            const strokeDasharray = `${sliceLength} ${circumference}`;
+            const strokeDashoffset = -currentOffset;
+            currentOffset += sliceLength;
+            
+            return (
+              <circle
+                key={id}
+                cx={center}
+                cy={center}
+                r={radius}
+                fill="none"
+                stroke={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap={pct > 0.99 ? 'butt' : 'round'}
+                transform={`rotate(-90 ${center} ${center})`}
+                style={{ transition: 'all 0.5s ease' }}
+              />
+            );
+          })}
+        </svg>
+        <div style={{ 
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column'
+        }}>
+          <span style={{ fontSize: 16, fontWeight: 900, color: FIT.text, lineHeight: 1 }}>{total}</span>
+          <span style={{ fontSize: 9, fontWeight: 800, color: FIT.textMuted, textTransform: 'uppercase', marginTop: 2 }}>{t.kcal}</span>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {mix.map(([id, data], i) => {
+          const pct = Math.round((data.kcal / total) * 100);
+          return (
+            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ 
+                width: 10, height: 10, borderRadius: 3, 
+                background: ACTIVITY_COLORS[i % ACTIVITY_COLORS.length] 
+              }} />
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700 }}>
+                <span style={{ color: FIT.text }}>{data.label}</span>
+                <span style={{ color: FIT.textMuted }}>{pct}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

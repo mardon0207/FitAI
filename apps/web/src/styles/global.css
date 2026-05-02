@@ -1,44 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root {
-  --fit-primary: #0EA5E9;
-  --fit-primary-dark: #0284C7;
-  --fit-primary-soft: #E0F2FE;
-  --fit-accent: #F59E0B;
-  --fit-accent-soft: #FEF3C7;
-  --fit-danger: #EF4444;
-  --fit-danger-soft: #FEE2E2;
+  /* Premium Indigo Palette */
+  --fit-primary: #4F46E5;
+  --fit-primary-dark: #3730A3;
+  --fit-primary-soft: #EEF2FF;
+  
+  --fit-accent: #10B981; /* Emerald Success */
+  --fit-accent-soft: #ECFDF5;
+  
+  --fit-danger: #F43F5E; /* Rose Danger */
+  --fit-danger-soft: #FFF1F2;
 
-  --fit-protein: #8B5CF6;
-  --fit-carbs: #F59E0B;
-  --fit-fat: #EC4899;
+  --fit-protein: #8B5CF6; /* Violet */
+  --fit-carbs: #F59E0B;   /* Amber */
+  --fit-fat: #EC4899;     /* Pink */
 
-  --fit-bg: #FAFAF9;
+  --fit-bg: #F8FAFC;
   --fit-surface: #FFFFFF;
-  --fit-surface-alt: #F5F5F4;
+  --fit-surface-alt: #F1F5F9;
 
-  --fit-text: #0F172A;
+  --fit-text: #1E293B;
   --fit-text-muted: #64748B;
   --fit-text-subtle: #94A3B8;
 
-  --fit-border: #E5E7EB;
+  --fit-border: #E2E8F0;
   --fit-border-soft: #F1F5F9;
 
-  --fit-shadow-sm: 0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06);
-  --fit-shadow-md: 0 2px 8px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
-  --fit-shadow-lg: 0 8px 32px rgba(15,23,42,0.08), 0 24px 48px rgba(15,23,42,0.08);
+  --fit-shadow-sm: 0 1px 2px rgba(79,70,229,0.05);
+  --fit-shadow-md: 0 4px 12px rgba(79,70,229,0.08), 0 2px 4px rgba(79,70,229,0.05);
+  --fit-shadow-lg: 0 12px 32px rgba(79,70,229,0.12), 0 8px 16px rgba(79,70,229,0.08);
 
-  --fit-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --fit-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --fit-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 }
 
 [data-theme="dark"] {
-  --fit-bg: #0F172A;
-  --fit-surface: #1E293B;
-  --fit-surface-alt: #0F172A;
+  --fit-bg: #020617; /* Deepest Slate */
+  --fit-surface: #0F172A;
+  --fit-surface-alt: #1E293B;
   --fit-text: #F8FAFC;
   --fit-text-muted: #94A3B8;
   --fit-text-subtle: #64748B;
-  --fit-border: #334155;
-  --fit-border-soft: #1E293B;
+  --fit-border: #1E293B;
+  --fit-border-soft: #0F172A;
+  --fit-primary-soft: rgba(79,70,229,0.15);
 }
 
 * {
@@ -155,7 +161,39 @@ button:not(:disabled):active,
   }
 }
 
-/* Respect the user's OS preference */
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+[data-theme="dark"] .glass {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--fit-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fit-text-subtle);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -163,3 +201,4 @@ button:not(:disabled):active,
     transition-duration: 0.01ms !important;
   }
 }
+

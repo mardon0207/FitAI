@@ -166,6 +166,7 @@ export interface ButtonProps {
   trailing?: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  loading?: boolean;
   type?: 'button' | 'submit' | 'reset';
   dark?: boolean;
   style?: CSSProperties;
@@ -173,7 +174,7 @@ export interface ButtonProps {
 
 export function Button({
   children, variant = 'primary', size = 'md', full, leading, trailing,
-  onClick, disabled, type = 'button', dark, style,
+  onClick, disabled, loading, type = 'button', dark, style,
 }: ButtonProps) {
   const sizes: Record<NonNullable<ButtonProps['size']>, CSSProperties> = {
     sm: { height: 36, padding: '0 14px', fontSize: 14 },
@@ -192,26 +193,42 @@ export function Button({
     dark: { background: '#0F172A', color: '#fff' },
     white: { background: '#fff', color: FIT.text, border: `1px solid ${FIT.border}` },
   };
+  
+  const isDisabled = disabled || loading;
+
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={isDisabled}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         borderRadius: 12, fontWeight: 600, fontFamily: FIT.sans,
-        cursor: disabled ? 'not-allowed' : 'pointer', border: 'none',
+        cursor: isDisabled ? 'not-allowed' : 'pointer', border: 'none',
         transition: 'all .15s', letterSpacing: -0.2,
         width: full ? '100%' : 'auto',
-        opacity: disabled ? 0.4 : 1,
+        opacity: isDisabled ? 0.6 : 1,
         ...sizes[size],
         ...variants[variant],
         ...style,
       }}
     >
-      {leading}
-      {children}
-      {trailing}
+      {loading ? (
+        <div style={{
+          width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)',
+          borderTopColor: '#fff', borderRadius: '50%',
+          animation: 'fit-spin 0.6s linear infinite'
+        }} />
+      ) : (
+        <>
+          {leading}
+          {children}
+          {trailing}
+        </>
+      )}
+      <style>{`
+        @keyframes fit-spin { to { transform: rotate(360deg); } }
+      `}</style>
     </button>
   );
 }
@@ -257,10 +274,11 @@ interface ChipProps {
   onClick?: () => void;
   leading?: ReactNode;
   dark?: boolean;
+  style?: CSSProperties;
 }
 
 export function Chip({
-  children, active, color = FIT.primary, size = 'md', onClick, leading, dark,
+  children, active, color = FIT.primary, size = 'md', onClick, leading, dark, style,
 }: ChipProps) {
   const h = size === 'sm' ? 28 : 34;
   return (
@@ -274,6 +292,7 @@ export function Chip({
         border: active ? `1px solid ${color}` : `1px solid ${dark ? '#334155' : FIT.border}`,
         fontSize: size === 'sm' ? 12 : 13, fontWeight: 600,
         cursor: onClick ? 'pointer' : 'default', flexShrink: 0, whiteSpace: 'nowrap',
+        ...style,
       }}
     >
       {leading}

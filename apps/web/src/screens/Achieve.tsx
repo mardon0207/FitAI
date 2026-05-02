@@ -4,31 +4,65 @@ import { Phone, TopBar, Card } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs } from '@/stores/prefs';
-
-const BADGES = [
-  { e: '🔥', n: 'Birinchi hafta', earned: true },
-  { e: '💪', n: '30 kun kombo', earned: true },
-  { e: '🥇', n: '100 ovqat', earned: true },
-  { e: '💧', n: 'Suv sardori', earned: true },
-  { e: '⭐', n: 'Mukammal kun', earned: false, p: 0.7 },
-  { e: '🏆', n: '100 kun kombo', earned: false, p: 0.28 },
-  { e: '🥗', n: 'Sabzavot chempioni', earned: false, p: 0.45 },
-  { e: '📊', n: 'Tahlilchi', earned: false, p: 0.1 },
-  { e: '🌟', n: 'Legenda', earned: false, p: 0.05 },
-];
-
-// Deterministic heatmap (no Math.random in render, for stable mock)
-const HEAT_SEED = [
-  0.2, 0.8, 0.4, 0, 0.6, 0.9, 0.5, 0.3, 0.7, 0, 0.2, 0.8, 0.6, 0.4,
-  0.5, 0, 0.7, 0.3, 0.9, 0.2, 0.4, 0.6, 0.8, 0, 0.1, 0.5, 0.3, 0.7,
-  0.9, 0.2, 0.4, 0, 0.6, 0.8, 0.5, 0.3, 0.7, 0, 0.2, 0.8, 0.6, 0.4,
-  0.5, 0, 0.7, 0.3, 0.9, 0.2, 0.4, 0.6, 0.8, 0, 0.1, 0.5, 0.3, 0.7,
-  0.9, 0.2, 0.4, 0, 0.6, 0.8, 0.5, 0.3, 0.7, 0, 0.2, 0.8, 0.6, 0.4,
-  0.5, 0, 0.7, 0.3, 0.9, 0.2, 0.4, 0.6, 0.8, 0, 0.1, 0.5, 0.3, 0.7,
-];
+import { useDiary } from '@/stores/diary';
+import { ymd } from '@/data/date';
 
 export function AchieveScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');
+  const entries = useDiary(s => s.entries);
+  const waterRecords = useDiary(s => s.water);
+  
+  const today = new Date();
+  const uniqueDays = [...new Set(entries.map(e => e.date))].sort().reverse();
+  
+  let currentStreak = 0;
+  for (let i = 0; i < 3000; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    if (uniqueDays.includes(ymd(d))) {
+      currentStreak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+  
+  let maxStreak = 0;
+  let tempStreak = 1;
+  for(let i = 0; i < uniqueDays.length - 1; i++) {
+     const curr = new Date(uniqueDays[i] as string);
+     const next = new Date(uniqueDays[i+1] as string);
+     const diffDays = Math.round((curr.getTime() - next.getTime()) / 86400000);
+     if (diffDays === 1) {
+         tempStreak++;
+     } else {
+         if (tempStreak > maxStreak) maxStreak = tempStreak;
+         tempStreak = 1;
+     }
+  }
+  if (tempStreak > maxStreak) maxStreak = tempStreak;
+  if (uniqueDays.length === 1) maxStreak = 1;
+
+  const heatmapData = Array.from({length: 84}).map((_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (83 - i));
+    const dt = ymd(d);
+    const dayEntries = entries.filter(e => e.date === dt);
+    if (dayEntries.length === 0) return 0;
+    const kcal = dayEntries.reduce((s, e) => s + e.kcal, 0);
+    return Math.min(1, Math.max(0.2, kcal / 2000));
+  });
+
+  const badges = [
+    { e: '🔥', n: 'Birinchi hafta', earned: uniqueDays.length >= 7, p: Math.min(1, uniqueDays.length / 7) },
+    { e: '💪', n: '30 kun kombo', earned: maxStreak >= 30, p: Math.min(1, maxStreak / 30) },
+    { e: '🥇', n: '100 ovqat', earned: entries.length >= 100, p: Math.min(1, entries.length / 100) },
+    { e: '💧', n: 'Suv sardori', earned: waterRecords.length >= 50, p: Math.min(1, waterRecords.length / 50) },
+    { e: '⭐', n: 'Mukammal kun', earned: entries.length > 5, p: entries.length > 5 ? 1 : entries.length / 5 },
+    { e: '🏆', n: '100 kun kombo', earned: maxStreak >= 100, p: Math.min(1, maxStreak / 100) },
+    { e: '🥗', n: 'Sabzavot chempioni', earned: false, p: 0.45 },
+    { e: '📊', n: 'Tahlilchi', earned: false, p: 0.1 },
+    { e: '🌟', n: 'Legenda', earned: false, p: 0.05 },
+  ];
 
   return (
     <Phone dark={dark}>
@@ -50,11 +84,11 @@ export function AchieveScreen() {
             fontSize: 48, fontWeight: 800, fontFamily: FIT.mono,
             color: '#fff', letterSpacing: -2, marginTop: -6,
           }}>
-            12
+            {currentStreak}
           </div>
           <div style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>Kunlik kombо</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 6 }}>
-            Eng yaxshi rekord: 34 kun
+            Eng yaxshi rekord: {maxStreak} kun
           </div>
         </Card>
 
@@ -66,12 +100,12 @@ export function AchieveScreen() {
             So&apos;nggi 3 oy
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: 3 }}>
-            {HEAT_SEED.slice(0, 84).map((v, i) => (
+            {heatmapData.map((v, i) => (
               <div
                 key={i}
                 style={{
                   aspectRatio: '1', borderRadius: 3,
-                  background: v === 0 ? '#F1F5F9' : `rgba(16, 185, 129, ${0.25 + v * 0.75})`,
+                  background: v === 0 ? (dark ? FIT.surfaceAlt : '#F1F5F9') : `rgba(16, 185, 129, ${0.25 + v * 0.75})`,
                 }}
               />
             ))}
@@ -95,7 +129,7 @@ export function AchieveScreen() {
           Nishonlar
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          {BADGES.map((b) => (
+          {badges.map((b) => (
             <div
               key={b.n}
               style={{

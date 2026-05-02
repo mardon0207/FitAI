@@ -1,18 +1,40 @@
-// Auth screens: Login, Register, Forgot password.
-// Ported from design/screens-a.jsx (ScreenLogin / ScreenRegister / ScreenForgot).
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, TopBar, Input, Button } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 import { usePrefs } from '@/stores/prefs';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/stores/auth';
+import { useT } from '@/stores/prefs';
 
 export function LoginScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
-  const [email, setEmail] = useState('aziz@fit.uz');
-  const [password, setPassword] = useState('••••••••');
+  const setAuth = useAuth((s) => s.setAuth);
+  
+  const t = useT();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) return alert(t.email + ' & ' + t.password);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      if (data.session) {
+        setAuth(data.session.access_token, data.user?.id || '');
+        navigate('/');
+      }
+    } catch (err: any) {
+      alert(err.message || t.errorOccurred);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Phone dark={dark}>
@@ -22,22 +44,24 @@ export function LoginScreen() {
         display: 'flex', flexDirection: 'column', gap: 16, overflow: 'auto',
       }}>
         <div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>Qaytib keldingizmi?</div>
-          <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6 }}>Hisobingizga kiring</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>{t.welcomeBack}</div>
+          <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6 }}>{t.loginSub}</div>
         </div>
         <Input
-          label="EMAIL"
+          label={t.email.toUpperCase()}
           value={email}
           onChange={setEmail}
           type="email"
+          placeholder="email@example.com"
           leading={<Icon name="chat" size={18} color={FIT.textMuted} />}
         />
         <div>
           <Input
-            label="PAROL"
+            label={t.password.toUpperCase()}
             value={password}
             onChange={setPassword}
             type="password"
+            placeholder="••••••••"
             leading={<Icon name="lock" size={18} color={FIT.textMuted} />}
             right={<Icon name="eye" size={18} color={FIT.textMuted} />}
           />
@@ -50,17 +74,23 @@ export function LoginScreen() {
               fontSize: 13, color: FIT.primary, fontWeight: 600,
             }}
           >
-            Parolni unutdingizmi?
+            {t.forgot}
           </button>
         </div>
-        <Button variant="primary" size="lg" full onClick={() => navigate('/')}>Kirish</Button>
+        <Button 
+          variant="primary" size="lg" full 
+          onClick={handleLogin}
+          loading={loading}
+        >
+          {t.loginAction}
+        </Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
           <div style={{ flex: 1, height: 1, background: FIT.border }} />
-          <span style={{ fontSize: 12, color: FIT.textMuted, fontWeight: 600 }}>YOKI</span>
+          <span style={{ fontSize: 12, color: FIT.textMuted, fontWeight: 600 }}>{t.or}</span>
           <div style={{ flex: 1, height: 1, background: FIT.border }} />
         </div>
         <Button variant="dark" size="lg" full leading={<span style={{ fontSize: 18 }}>􀣺</span>}>
-          Apple bilan kirish
+          {t.appleLogin}
         </Button>
         <Button
           variant="white" size="lg" full
@@ -71,12 +101,12 @@ export function LoginScreen() {
             }} />
           }
         >
-          Google bilan kirish
+          {t.googleLogin}
         </Button>
         <div style={{
           textAlign: 'center', fontSize: 14, color: FIT.textMuted, marginTop: 'auto',
         }}>
-          Hisobingiz yo&apos;qmi?{' '}
+          {t.noAccount}{' '}
           <button
             type="button"
             onClick={() => navigate('/register')}
@@ -85,7 +115,7 @@ export function LoginScreen() {
               border: 'none', cursor: 'pointer', padding: 0, font: 'inherit',
             }}
           >
-            Ro&apos;yxatdan o&apos;ting
+            {t.registerAction}
           </button>
         </div>
       </div>
@@ -96,9 +126,39 @@ export function LoginScreen() {
 export function RegisterScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
-  const [name, setName] = useState('Aziz Karimov');
-  const [email, setEmail] = useState('aziz@fit.uz');
-  const [password, setPassword] = useState('••••••••••');
+  const setAuth = useAuth((s) => s.setAuth);
+
+  const t = useT();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    if (!email || !password || !name) return alert(t.all);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name }
+        }
+      });
+      if (error) throw error;
+      if (data.session) {
+        setAuth(data.session.access_token, data.user?.id || '');
+        navigate('/quiz/1');
+      } else {
+        alert(t.checkEmail);
+        navigate('/login');
+      }
+    } catch (err: any) {
+      alert(err.message || t.errorOccurred);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Phone dark={dark}>
@@ -108,17 +168,18 @@ export function RegisterScreen() {
         display: 'flex', flexDirection: 'column', gap: 14, overflow: 'auto',
       }}>
         <div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>Salom! 👋</div>
-          <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6 }}>Yangi hisob yarating</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>{t.hello} 👋</div>
+          <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6 }}>{t.createAccount}</div>
         </div>
-        <Input label="ISM" value={name} onChange={setName} />
-        <Input label="EMAIL" value={email} onChange={setEmail} type="email" />
+        <Input label={t.name.toUpperCase()} value={name} onChange={setName} placeholder={t.name} />
+        <Input label={t.email.toUpperCase()} value={email} onChange={setEmail} type="email" placeholder="email@example.com" />
         <div>
           <Input
-            label="PAROL"
+            label={t.password.toUpperCase()}
             value={password}
             onChange={setPassword}
             type="password"
+            placeholder="••••••••"
             right={<Icon name="eye" size={18} color={FIT.textMuted} />}
           />
           <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
@@ -127,7 +188,7 @@ export function RegisterScreen() {
             ))}
           </div>
           <div style={{ fontSize: 12, color: FIT.primary, marginTop: 4, fontWeight: 600 }}>
-            Kuchli parol
+            {t.strongPassword}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 4 }}>
@@ -138,14 +199,18 @@ export function RegisterScreen() {
             <Icon name="check" size={14} color="#fff" strokeWidth={3} />
           </div>
           <div style={{ fontSize: 13, color: FIT.text, lineHeight: 1.5 }}>
-            Foydalanish shartlariga va maxfiylik siyosatiga roziman
+            {t.termsAgreement}
           </div>
         </div>
-        <Button variant="primary" size="lg" full onClick={() => navigate('/quiz/1')}>
-          Ro&apos;yxatdan o&apos;tish
+        <Button 
+          variant="primary" size="lg" full 
+          onClick={handleRegister}
+          loading={loading}
+        >
+          {t.registerAction}
         </Button>
         <div style={{ textAlign: 'center', fontSize: 14, color: FIT.textMuted, marginTop: 'auto' }}>
-          Hisobingiz bormi?{' '}
+          {t.haveAccount}{' '}
           <button
             type="button"
             onClick={() => navigate('/login')}
@@ -154,7 +219,7 @@ export function RegisterScreen() {
               border: 'none', cursor: 'pointer', padding: 0, font: 'inherit',
             }}
           >
-            Kiring
+            {t.loginAction}
           </button>
         </div>
       </div>
@@ -162,10 +227,29 @@ export function RegisterScreen() {
   );
 }
 
+
 export function ForgotScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');
+  const t = useT();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('aziz@fit.uz');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleReset = async () => {
+    if (!email) return alert(t.email);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      alert(t.checkEmail);
+    } catch (err: any) {
+      alert(err.message || t.errorOccurred);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Phone dark={dark}>
@@ -181,16 +265,22 @@ export function ForgotScreen() {
           <Icon name="lock" size={32} color={FIT.primary} strokeWidth={2} />
         </div>
         <div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>Parolni tiklash</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>{t.resetPassword}</div>
           <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6, lineHeight: 1.5 }}>
-            Email kiriting, biz sizga parol tiklash havolasini yuboramiz.
+            {t.forgotSub.replace('{email}', t.email.toLowerCase())}
           </div>
         </div>
         <Input
-          label="EMAIL" value={email} onChange={setEmail} type="email"
+          label={t.email.toUpperCase()} value={email} onChange={setEmail} type="email"
           leading={<Icon name="chat" size={18} color={FIT.textMuted} />}
         />
-        <Button variant="primary" size="lg" full>Link yuborish</Button>
+        <Button 
+          variant="primary" size="lg" full 
+          onClick={handleReset}
+          loading={loading}
+        >
+          {t.sendLink}
+        </Button>
         <button
           type="button"
           onClick={() => navigate('/login')}
@@ -199,9 +289,71 @@ export function ForgotScreen() {
             marginTop: 'auto', background: 'none', border: 'none', cursor: 'pointer',
           }}
         >
-          ← Kirishga qaytish
+          ← {t.signin}
         </button>
       </div>
     </Phone>
   );
 }
+
+export function ResetPasswordScreen() {
+  const dark = usePrefs((s) => s.theme === 'dark');
+  const t = useT();
+  const navigate = useNavigate();
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (!password) return alert(t.password);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      alert(t.passwordUpdated);
+      navigate('/login');
+    } catch (err: any) {
+      alert(err.message || t.errorOccurred);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Phone dark={dark}>
+      <TopBar back onBack={() => navigate('/login')} transparent />
+      <div style={{
+        flex: 1, padding: '8px 24px 20px',
+        display: 'flex', flexDirection: 'column', gap: 20,
+      }}>
+        <div style={{
+          width: 72, height: 72, borderRadius: 20, background: FIT.primarySoft,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon name="lock" size={32} color={FIT.primary} strokeWidth={2} />
+        </div>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.6 }}>{t.newPassword}</div>
+          <div style={{ fontSize: 15, color: FIT.textMuted, marginTop: 6, lineHeight: 1.5 }}>
+            {t.enterNewPasswordSub}
+          </div>
+        </div>
+        <Input
+          label={t.password.toUpperCase()}
+          value={password}
+          onChange={setPassword}
+          type="password"
+          placeholder="••••••••"
+          leading={<Icon name="lock" size={18} color={FIT.textMuted} />}
+        />
+        <Button 
+          variant="primary" size="lg" full 
+          onClick={handleUpdatePassword}
+          loading={loading}
+        >
+          {t.save}
+        </Button>
+      </div>
+    </Phone>
+  );
+}
+

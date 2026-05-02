@@ -6,62 +6,46 @@ Oilaviy kaloriya, qadam va mikroelement tracker — tijorat emas, yaqinlar uchun
 
 | Parametr | Qaror | Sabab |
 |----------|-------|-------|
-| Platforma | **PWA (web-first)** + Capacitor wrapper V2 | Dizayn React web'da, 90% qayta ishlatiladi. iOS + Android home-screen'ga o'rnatish. App Store shart emas. |
+| Platforma | **PWA (web-first)** | Dizayn React web'da, iOS + Android home-screen'ga o'rnatish. |
 | Frontend | Vite + React 18 + TypeScript | Design kod bazasiga mos, tez dev loop |
-| Backend | FastAPI + PostgreSQL + Alembic | Nutrition ETL uchun Python ideal |
-| Nutrition DB | USDA FoodData Central + OpenFoodFacts + uz custom | CC0 / bepul manbalar |
-| Ovqat kiritish | Search + **Ingredient Composer** + Barcode | Camera/AI Vision YO'Q |
-| Pedometer (MVP) | Manual qadam kiritish | Web'da native Health API yo'q, Capacitor'da V2 qo'shamiz |
-| Auth | Supabase (MVP) → self-host keyinchalik | Tez start |
-| Hosting | Vercel/Netlify (web) + Fly.io/Railway (api) | Free tier yetarli |
+| Backend | **Supabase** (Auth, DB, RLS) | Realtime ma'lumotlar va tayyor Auth yechimi |
+| Nutrition DB | USDA + OpenFoodFacts + uz custom | Supabase jadvallariga import qilingan |
+| Ovqat kiritish | Search + **Ingredient Composer** + Barcode | Murakkab taomlarni yig'ish imkoniyati |
+| Pedometer | Manual kiritish | Web/PWA uchun eng oddiy va ishonchli usul |
+| Hosting | Vercel | Monorepo va Vite uchun eng yaxshi platforma |
 
 ## 📁 Tuzilma
 
 ```
 fit/
 ├── apps/
-│   ├── web/              # Vite React TS — PWA
-│   └── api/              # FastAPI backend
+│   └── web/              # Vite React TS — Asosiy PWA ilova
 ├── packages/
-│   ├── nutrition-core/   # Umumiy biznes-logika (RDA, kaloriya hisoblash)
-│   └── shared-types/     # TS type'lar + JSON schema
-├── design/               # Claude Design handoff (reference)
-│   ├── FitAI.html        # Dizayn preview (browser'da ochiladi)
-│   ├── tokens.jsx        # Design tokens
-│   ├── components.jsx    # UI komponentlari
-│   ├── screens-a/b/c.jsx # 20+ ekran mockups
-│   └── HANDOFF_README.md
-├── docs/
-│   ├── design_prompts.md # Dizayn promptlari
-│   ├── HANDOFF.md        # Keyingi model uchun yo'riqnoma ⭐
-│   └── ARCHITECTURE.md
-└── infra/
-    └── docker-compose.yml
+│   └── shared-types/     # Umumiy TS type'lar
+├── design/               # Claude Design source (reference)
+├── docs/                 # Hujjatlar va yo'riqnomalar
+└── vercel.json           # Deployment konfiguratsiyasi
 ```
 
 ## 🚀 Boshlash
 
 ```bash
-# 1. Dependencies
+# 1. Kutubxonalarni o'rnatish
 pnpm install
 
-# 2. Web (PWA)
-pnpm --filter @fit/web dev
+# 2. .env faylini sozlash (apps/web/.env)
+# VITE_SUPABASE_URL=...
+# VITE_SUPABASE_ANON_KEY=...
 
-# 3. API
-cd apps/api && python -m venv .venv && .venv/Scripts/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+# 3. Loyihani ishga tushirish
+pnpm dev
 
-# 4. Dizayn preview (HTML)
-# apps/web/public/design-preview.html ni brauzerda oching
-# yoki: npx serve design/
+# 4. Sifatni tekshirish
+pnpm --filter @fit/web typecheck
 ```
 
-## 📖 Keyingi qadam
+## 📖 Muhim hujjatlar
 
-`docs/HANDOFF.md` — keyingi model (Haiku/Sonnet) uchun batafsil yo'riqnoma.
-
-## 📄 Reja
-
-`C:\Users\asus\.claude\plans\smooth-frolicking-llama.md` — to'liq TZ (uz + ru).
+- `docs/FITAI_BLUEPRINT.md` — Loyihaning texnik konsepsiyasi.
+- `CLAUDE.md` — Rivojlantirish bo'yicha ko'rsatmalar va joriy holat.
+- `docs/design_prompts.md` — UI generatorlari uchun foydalanilgan promptlar.

@@ -5,13 +5,6 @@
   "installCommand": "pnpm install",
   "framework": "vite",
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://ecofit-api.vercel.app/api/:path*"
-    },
-    {
-      "source": "/health",
-      "destination": "https://ecofit-api.vercel.app/health"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

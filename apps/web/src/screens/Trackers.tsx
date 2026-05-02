@@ -29,43 +29,95 @@ export function WaterScreen() {
         right={
           <button
             type="button" onClick={() => navigate('/')}
-            aria-label="Yopish"
+            aria-label={t.close}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             <Icon name="close" size={20} color={FIT.textMuted} />
           </button>
         }
-        title="Suv iste'moli"
+        title={t.waterIntake}
         transparent
       />
       <div style={{
         flex: 1, padding: '0 20px 20px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
       }}>
-        <div style={{ width: 140, height: 220, position: 'relative', marginTop: 10 }}>
-          <div style={{
-            position: 'absolute', inset: 0, borderRadius: '40% 40% 20px 20px',
-            background: '#EEF2FF', border: '2px solid #C7D2FE',
-          }} />
-          <div style={{
-            position: 'absolute', left: 2, right: 2, bottom: 2,
-            height: `${Math.min(96, (ml / (DAILY_TARGET_ML)) * 96)}%`,
-            borderRadius: '0 0 18px 18px',
-            background: 'linear-gradient(180deg, #60A5FA, #3B82F6)',
-            transition: 'height 0.5s',
-          }} />
+        <style>{`
+          @keyframes wave {
+            0% { transform: translate(-50%, 0) rotate(0deg); }
+            100% { transform: translate(-50%, 0) rotate(360deg); }
+          }
+          .water-container {
+            width: 160px;
+            height: 240px;
+            position: relative;
+            margin-top: 20px;
+            background: rgba(238, 242, 255, 0.5);
+            border: 4px solid #C7D2FE;
+            border-radius: 40px 40px 25px 25px;
+            overflow: hidden;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.05);
+          }
+          .water-liquid {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #60A5FA, #3B82F6);
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .water-wave {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 45%;
+            top: -285px;
+            left: 50%;
+            animation: wave 7s infinite linear;
+          }
+          .water-wave-back {
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 40%;
+            top: -295px;
+            left: 50%;
+            animation: wave 10s infinite linear;
+          }
+        `}</style>
+        
+        <div className="water-container">
+          <div 
+            className="water-liquid" 
+            style={{ height: `${Math.min(100, (ml / DAILY_TARGET_ML) * 100)}%` }}
+          >
+            <div className="water-wave" />
+            <div className="water-wave-back" />
+          </div>
+          
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', color: '#fff',
+            alignItems: 'center', justifyContent: 'center', color: ml > 1000 ? '#fff' : (dark ? '#fff' : FIT.text),
+            textShadow: ml > 1000 ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+            zIndex: 10
           }}>
-            <div style={{ fontSize: 40, fontWeight: 800, fontFamily: FIT.mono, letterSpacing: -1 }}>
+            <div style={{ fontSize: 44, fontWeight: 900, fontFamily: FIT.mono, letterSpacing: -2 }}>
               {glasses}/{total}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
-              {t.glass.toUpperCase()}
+            <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.8 }}>
+              {t.glass}
             </div>
           </div>
+
+          {/* Glossy overlay */}
+          <div style={{ 
+            position: 'absolute', top: 10, left: 15, width: 20, height: 100, 
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent)',
+            borderRadius: 10, zIndex: 5
+          }} />
         </div>
 
         <div style={{ display: 'flex', gap: 20, marginTop: 24, alignItems: 'center' }}>
@@ -73,7 +125,7 @@ export function WaterScreen() {
             type="button"
             onClick={() => addWater(-GLASS_ML)}
             disabled={ml < GLASS_ML}
-            aria-label="Kamaytirish"
+            aria-label={t.decrease}
             style={{
               width: 56, height: 56, borderRadius: 28, background: '#fff',
               boxShadow: FIT.shadowMd, border: 'none',
@@ -90,7 +142,7 @@ export function WaterScreen() {
           <button
             type="button"
             onClick={() => addWater(GLASS_ML)}
-            aria-label="Qo'shish"
+            aria-label={t.add}
             style={{
               width: 56, height: 56, borderRadius: 28, background: '#3B82F6',
               boxShadow: '0 8px 24px #3B82F666', border: 'none',
@@ -131,6 +183,7 @@ export function WaterScreen() {
 }
 
 export function WeightScreen() {
+  const t = useT();
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
   const latestKg = useDiary((s) => s.weightLatest());
@@ -154,9 +207,9 @@ export function WeightScreen() {
             width: 36, height: 4, background: FIT.border,
             borderRadius: 2, margin: '0 auto 14px',
           }} />
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Vaznni yozish</div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{t.logWeight}</div>
           <div style={{ fontSize: 12, color: FIT.textMuted, marginBottom: 20 }}>
-            {latestKg ? `Oxirgi: ${latestKg.toFixed(1)} kg` : 'Birinchi yozuv'}
+            {latestKg ? `${t.last}: ${latestKg.toFixed(1)} kg` : t.firstEntry}
           </div>
 
           <div style={{
@@ -169,12 +222,20 @@ export function WeightScreen() {
               style={roundBtn(FIT.surfaceAlt, FIT.text)} aria-label="−"
             >−</button>
             <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: 54, fontWeight: 800, fontFamily: FIT.mono,
-                color: FIT.text, letterSpacing: -2,
-              }}>
-                {weight.toFixed(1)}
-              </div>
+              <input
+              type="number"
+              step="0.1"
+              value={weight || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setWeight(val === '' ? 0 : parseFloat(val));
+              }}
+              style={{
+                width: '100%', fontSize: 48, fontWeight: 900, border: 'none',
+                outline: 'none', background: 'transparent', color: FIT.text,
+                textAlign: 'center', fontFamily: FIT.mono,
+              }}
+            />
               <div style={{ fontSize: 12, color: FIT.textMuted, marginTop: -4 }}>kg</div>
             </div>
             <button
@@ -185,20 +246,26 @@ export function WeightScreen() {
           </div>
 
           <Input
-            label="IZOH (ixtiyoriy)"
+            label={t.noteOptional}
             value={note}
             onChange={setNote}
-            placeholder="Masalan: ertalab nonushtadan keyin"
+            placeholder={t.weightNoteExample}
           />
           <div style={{ height: 10 }} />
           <Button
             variant="primary" size="lg" full
-            onClick={() => {
-              addWeight(weight, note || undefined);
-              navigate(-1);
+            onClick={async () => {
+              try {
+                console.log('Logging weight:', weight, note);
+                await addWeight(weight, note || undefined);
+                navigate(-1);
+              } catch (err) {
+                console.error('Failed to log weight:', err);
+                alert(t.errorOccurred);
+              }
             }}
           >
-            Saqlash
+            {t.save}
           </Button>
         </div>
       </div>

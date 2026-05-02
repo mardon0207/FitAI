@@ -7,15 +7,15 @@
 - **Tijorat emas** — faqat oila/yaqinlar uchun. Monetizatsiya, reklama, paywall YO'Q.
 - **Camera / AI Vision YO'Q** — Food Search + Ingredient Composer + Barcode faqat.
 - **Platforma: PWA** (Vite + React + TS). React Native emas.
-- **Backend: FastAPI** + PostgreSQL + Alembic.
+- **Backend: Supabase** (Auth, Database, RLS).
 - **Til: uz (asosiy)** + ru + en. `useT()` hook orqali, `tokens.ts::I18N` da.
 
 ## Stack (hech qachon o'zgartirmang foydalanuvchi so'ramasa)
 
 - Frontend: Vite 5 + React 18 + TypeScript strict + Zustand + React Query + React Router
-- Backend: FastAPI + SQLAlchemy 2 async + Alembic + Pydantic 2
-- DB: PostgreSQL 16 + pg_trgm (FTS uchun)
-- Shared logic: `packages/nutrition-core` (pure TS, framework-free)
+- Backend: Supabase (BaaS)
+- DB: PostgreSQL (Managed by Supabase)
+- Logic: `apps/web/src/lib/nutrition.ts` (centralized nutrition engine)
 
 ## Dizayn
 
@@ -24,27 +24,21 @@
 - **Komponentlar:** `apps/web/src/design/primitives.tsx` — Phone, TopBar, Card, Button, Chip, Icon, FoodThumb, MultiRing, MacroBar.
 - **Port namunasi:** `apps/web/src/screens/Home.tsx` — `design/screens-b.jsx::ScreenHome` dan portlangan.
 
-## Ekranlarni porting tartibi
+## Loyiha holati (Project Status)
 
-1. Composer (flagship feature) → `design/screens-b.jsx::ScreenComposer`
-2. Search → `design/screens-b.jsx::ScreenSearch`
-3. Diary → `design/screens-b.jsx::ScreenDiary`
-4. Profile → `design/screens-c.jsx::ScreenProfile`
-5. Stats → `design/screens-c.jsx::ScreenStats`
-6. Qolganlar (Splash, Auth, Quiz, Detail, Micro, Deficiency, Water, Weight, Achieve, Report, Lang, Theme, Perms)
+- ✅ **Porting:** Barcha ekranlar `design/` manbasidan porting qilingan.
+- ✅ **Backend:** Supabase'ga to'liq ko'chirilgan (Auth, Database, RLS).
+- ✅ **Type-safety:** TypeScript strict mode va TSC build barqaror.
+- ✅ **Localization:** 100% I18N (uz, ru, en) `tokens.ts` orqali.
+- ✅ **Deployment:** Vercel'ga tayyor (root `vercel.json` orqali).
 
 ## Build / test
 
 ```bash
 # Web
 pnpm --filter @fit/web dev        # localhost:5173
-pnpm --filter @fit/web typecheck
-
-# API
-cd apps/api
-uvicorn app.main:app --reload     # localhost:8000
-alembic upgrade head
-python -m scripts.seed_uz
+pnpm --filter @fit/web build      # Production build
+pnpm --filter @fit/web typecheck  # Type safety check
 ```
 
 ## Nomenklatura

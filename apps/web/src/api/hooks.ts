@@ -1,135 +1,168 @@
-/** React Query hooks for API endpoints. Use these in screens. */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from './client';
-import { useAuth } from '@/stores/auth';
+/** React Query hooks for Supabase endpoints. Use these in screens. */
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import type {
-  ComposedTotals, ComposerIngredient, DiaryEntry, FoodDetail, FoodSummary, MealType, Unit,
+  FoodDetail, FoodSummary,
 } from '@fit/shared-types';
-
-// ─── Auth ────────────────────────────────────────────────
-interface AuthResponse {
-  access_token: string;
-  token_type: string;
-  user_id: number;
-}
-
-export function useLogin() {
-  const setAuth = useAuth((s) => s.setAuth);
-  return useMutation({
-    mutationFn: (body: { email: string; password: string }) =>
-      apiFetch<AuthResponse>('/api/auth/login', { method: 'POST', body }),
-    onSuccess: (data) => setAuth(data.access_token, data.user_id),
-  });
-}
-
-export function useSignup() {
-  const setAuth = useAuth((s) => s.setAuth);
-  return useMutation({
-    mutationFn: (body: { email: string; password: string; name?: string }) =>
-      apiFetch<AuthResponse>('/api/auth/signup', { method: 'POST', body }),
-    onSuccess: (data) => setAuth(data.access_token, data.user_id),
-  });
-}
 
 // ─── Foods ───────────────────────────────────────────────
 export function useSearchFoods(q: string, lang: string, enabled = true) {
   return useQuery({
     queryKey: ['foods', 'search', q, lang],
-    queryFn: ({ signal }) =>
-      apiFetch<FoodSummary[]>('/api/foods/search', { query: { q, lang }, signal }),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('search_foods', {
+        search_query: q,
+        search_lang: lang,
+      });
+      if (error) throw error;
+      return data as FoodSummary[];
+    },
     enabled: enabled && q.length > 0,
     staleTime: 60_000,
   });
 }
 
-export function useFood(id: number | string | undefined) {
+export function useFood(id: string | undefined) {
   return useQuery({
     queryKey: ['foods', id],
-    queryFn: ({ signal }) => apiFetch<FoodDetail>(`/api/foods/${id}`, { signal }),
+    queryFn: async () => {
+      // First try to find in foods
+      const { data: food, error: foodError } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('slug', id)
+        .maybeSingle();
+      
+      if (food) {
+          return {
+            id: food.slug as any,
+            name: food.name_uz,
+            emoji: food.emoji,
+            category: food.category,
+            source: 'uz',
+            defaultUnit: food.default_unit || 'g',
+            defaultQty: 100,
+            kcalPer100g: food.per_100g.kcal,
+            proteinG: food.per_100g.protein,
+            carbsG: food.per_100g.carbs,
+            fatG: food.per_100g.fat,
+            gramsPerUnit: food.grams_per_unit,
+            isRecipe: false,
+            nutrients: {
+              kcal: food.per_100g.kcal,
+              protein: food.per_100g.protein,
+              carbs: food.per_100g.carbs,
+              fat: food.per_100g.fat,
+              ...(food.per_100g.micros || {}),
+            },
+          } as FoodDetail;
+      }
+
+      // If not found, try recipes
+      const { data: recipe, error: recipeError } = await supabase
+        .from('recipes')
+        .select('*, recipe_ingredients(*, foods(*))')
+        .eq('slug', id)
+        .maybeSingle();
+
+      if (recipe) {
+        return {
+          id: recipe.slug as any,
+          name: recipe.name_uz,
+          emoji: recipe.emoji,
+          category: recipe.category,
+          source: 'uz',
+          defaultUnit: recipe.default_unit || 'serving',
+          defaultQty: 1,
+          kcalPer100g: recipe.kcal_per_100g,
+          proteinG: recipe.protein_per_100g,
+          carbsG: recipe.carbs_per_100g,
+          fatG: recipe.fat_per_100g,
+          gramsPerUnit: recipe.grams_per_unit || recipe.serving_grams,
+          isRecipe: true,
+          nutrients: {
+            kcal: recipe.kcal_per_100g,
+            protein: recipe.protein_per_100g,
+            carbs: recipe.carbs_per_100g,
+            fat: recipe.fat_per_100g,
+          },
+        } as FoodDetail;
+      }
+
+      throw new Error('Food not found');
+    },
     enabled: id !== undefined,
   });
 }
 
-// ─── Composer ────────────────────────────────────────────
-export function useCompose() {
-  return useMutation({
-    mutationFn: (ingredients: ComposerIngredient[]) =>
-      apiFetch<ComposedTotals>('/api/ingredients/compose', {
-        method: 'POST',
-        body: { ingredients },
-      }),
-  });
-}
-
-// ─── Diary ───────────────────────────────────────────────
-export interface TodaySummary {
-  log_date: string;
-  consumed_kcal: number;
-  consumed_protein_g: number;
-  consumed_carbs_g: number;
-  consumed_fat_g: number;
-  target_kcal: number | null;
-  target_protein_g: number | null;
-  target_carbs_g: number | null;
-  target_fat_g: number | null;
-  steps: number;
-  kcal_burned: number;
-  water_ml: number;
-  weight_kg: number | null;
-  meals: Record<MealType, DiaryEntry[]>;
-}
-
-export function useToday(targetDate?: string) {
-  const token = useAuth((s) => s.token);
+export function useFoods(slugs: string[]) {
   return useQuery({
-    queryKey: ['diary', 'today', targetDate ?? 'today'],
-    queryFn: ({ signal }) =>
-      apiFetch<TodaySummary>('/api/diary/today', {
-        query: targetDate ? { date: targetDate } : undefined,
-        signal,
-      }),
-    enabled: !!token,
-    staleTime: 30_000,
-  });
-}
+    queryKey: ['foods', 'batch', slugs.join(',')],
+    queryFn: async () => {
+      if (slugs.length === 0) return [];
+      
+      const [foodsRes, recipesRes] = await Promise.all([
+        supabase.from('foods').select('*').in('slug', slugs),
+        supabase.from('recipes').select('*').in('slug', slugs),
+      ]);
 
-export function useAddEntry() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: {
-      food_id: number;
-      meal_type: MealType;
-      quantity: number;
-      unit: Unit;
-      note?: string;
-    }) =>
-      apiFetch<DiaryEntry>('/api/diary/entry', { method: 'POST', body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['diary'] }),
-  });
-}
+      const results: FoodDetail[] = [];
+      
+      if (foodsRes.data) {
+        foodsRes.data.forEach(food => {
+          results.push({
+            id: food.slug as any,
+            name: food.name_uz,
+            emoji: food.emoji,
+            category: food.category,
+            source: 'uz',
+            defaultUnit: food.default_unit || 'g',
+            defaultQty: 100,
+            kcalPer100g: food.per_100g.kcal,
+            proteinG: food.per_100g.protein,
+            carbsG: food.per_100g.carbs,
+            fatG: food.per_100g.fat,
+            gramsPerUnit: food.grams_per_unit,
+            isRecipe: false,
+            nutrients: {
+              kcal: food.per_100g.kcal,
+              protein: food.per_100g.protein,
+              carbs: food.per_100g.carbs,
+              fat: food.per_100g.fat,
+              ...(food.per_100g.micros || {}),
+            },
+          } as FoodDetail);
+        });
+      }
 
-export function useAddWater() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (ml: number) => apiFetch<{ id: number }>('/api/diary/water', { method: 'POST', body: { ml } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['diary'] }),
-  });
-}
+      if (recipesRes.data) {
+        recipesRes.data.forEach(recipe => {
+          results.push({
+            id: recipe.slug as any,
+            name: recipe.name_uz,
+            emoji: recipe.emoji,
+            category: recipe.category,
+            source: 'uz',
+            defaultUnit: recipe.default_unit || 'serving',
+            defaultQty: 1,
+            kcalPer100g: recipe.kcal_per_100g,
+            proteinG: recipe.protein_per_100g,
+            carbsG: recipe.carbs_per_100g,
+            fatG: recipe.fat_per_100g,
+            gramsPerUnit: recipe.grams_per_unit || recipe.serving_grams,
+            isRecipe: true,
+            nutrients: {
+              kcal: recipe.kcal_per_100g,
+              protein: recipe.protein_per_100g,
+              carbs: recipe.carbs_per_100g,
+              fat: recipe.fat_per_100g,
+            },
+          } as FoodDetail);
+        });
+      }
 
-export function useAddWeight() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: { weight_kg: number; note?: string }) =>
-      apiFetch<{ id: number }>('/api/diary/weight', { method: 'POST', body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['diary'] }),
-  });
-}
-
-export function useAddSteps() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (steps: number) =>
-      apiFetch<{ id: number }>('/api/diary/steps', { method: 'POST', body: { steps } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['diary'] }),
+      return results;
+    },
+    enabled: slugs.length > 0,
   });
 }
