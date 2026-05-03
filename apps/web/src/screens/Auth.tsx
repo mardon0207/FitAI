@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Phone, TopBar, Input, Button } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
-import { usePrefs } from '@/stores/prefs';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/stores/auth';
-import { useT } from '@/stores/prefs';
+import { useT, usePrefs } from '@/stores/prefs';
+import { useProfile } from '@/stores/profile';
+import { supabase } from '@/lib/supabase';
 
 export function LoginScreen() {
   const dark = usePrefs((s) => s.theme === 'dark');

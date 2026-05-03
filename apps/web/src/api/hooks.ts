@@ -26,6 +26,8 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
         category: food.category,
         source: 'uz',
         kcal: food.per_100g.kcal,
+        defaultUnit: food.default_unit || 'g',
+        defaultQty: 100,
       })) as FoodSummary[];
     },
     enabled: enabled && q.length > 0,
