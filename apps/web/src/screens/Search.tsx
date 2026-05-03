@@ -36,11 +36,13 @@ export function SearchScreen() {
   const { data: allResults = [], isLoading, isFetching, isError, refetch } = useSearchFoods(searchQuery, lang, true);
 
   const results = useMemo(() => {
-    let list = allResults;
-    if (tab === 'recipes') list = allResults.filter((r: any) => r.is_recipe);
-    if (tab === 'ingredients') list = allResults.filter((r: any) => !r.is_recipe);
-    return list;
+    if (tab === 'recipes') return allResults.filter((r: any) => r.isRecipe);
+    if (tab === 'ingredients') return allResults.filter((r: any) => !r.isRecipe);
+    return allResults;
   }, [allResults, tab]);
+
+  const fmt = (n: number | undefined, decimals = 0) =>
+    n === undefined || isNaN(n) ? '0' : decimals === 0 ? Math.round(n).toString() : n.toFixed(decimals);
 
   const handleSelect = (food: any) => {
     if (composerMode) {
@@ -226,16 +228,16 @@ export function SearchScreen() {
                        </span>
                        {r.category && ` · ${r.category}`}
                      </div>
-                     <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 10, fontWeight: 700, fontFamily: FIT.mono }}>
-                        <span style={{ color: FIT.protein }}>P {r.proteinG?.toFixed(0)}</span>
-                        <span style={{ color: FIT.carbs }}>C {r.carbsG?.toFixed(0)}</span>
-                        <span style={{ color: FIT.fat }}>F {r.fatG?.toFixed(0)}</span>
-                     </div>
-                   </div>
-                   <div style={{ textAlign: 'right' }}>
-                     <div style={{ fontSize: 22, fontWeight: 900, fontFamily: FIT.mono, color: FIT.primary, letterSpacing: -1 }}>
-                       {Math.round(r.kcalPer100g ?? 0)}
-                     </div>
+                      <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 10, fontWeight: 700, fontFamily: FIT.mono }}>
+                         <span style={{ color: FIT.protein }}>P {fmt(r.proteinG)}</span>
+                         <span style={{ color: FIT.carbs }}>C {fmt(r.carbsG)}</span>
+                         <span style={{ color: FIT.fat }}>F {fmt(r.fatG)}</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, fontFamily: FIT.mono, color: FIT.primary, letterSpacing: -1 }}>
+                        {fmt(r.kcalPer100g)}
+                      </div>
                      <div style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase' }}>{t.kcal}</div>
                    </div>
                  </button>
