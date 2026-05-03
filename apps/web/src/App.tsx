@@ -112,6 +112,10 @@ export function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const userId = useAuth((s) => s.userId);
+  const hasOnboarded = usePrefs((s) => s.hasOnboarded);
+  const hasCompletedQuiz = useProfile((s) => s.hasCompletedQuiz);
+
   return (
     <>
       {!isOnline && (
@@ -128,50 +132,68 @@ export function App() {
       )}
       <Suspense fallback={<div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: FIT.bg, color: FIT.textMuted, fontWeight: 700 }}>FIT AI...</div>}>
         <Routes key={primaryColor}>
-          {/* Main tabs */}
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/diary" element={<DiaryScreen />} />
-          <Route path="/stats" element={<StatsScreen />} />
-          <Route path="/profile" element={<ProfileScreen />} />
+          {!userId ? (
+            <>
+              <Route path="/splash" element={<SplashScreen />} />
+              <Route path="/onboarding/:step" element={<OnboardingStepRoute />} />
+              <Route path="/login" element={<LoginScreen />} />
+              <Route path="/register" element={<RegisterScreen />} />
+              <Route path="/forgot" element={<ForgotScreen />} />
+              <Route path="/reset-password" element={<ResetPasswordScreen />} />
+              <Route path="*" element={<Navigate to={hasOnboarded ? "/login" : "/splash"} replace />} />
+            </>
+          ) : !hasCompletedQuiz ? (
+            <>
+              <Route path="/quiz/:step" element={<QuizScreen />} />
+              <Route path="*" element={<Navigate to="/quiz/1" replace />} />
+            </>
+          ) : (
+            <>
+              {/* Main tabs */}
+              <Route path="/" element={<HomeScreen />} />
+              <Route path="/diary" element={<DiaryScreen />} />
+              <Route path="/stats" element={<StatsScreen />} />
+              <Route path="/profile" element={<ProfileScreen />} />
 
-          {/* Quick-log flow */}
-          <Route path="/add" element={<FabMenu />} />
-          <Route path="/search" element={<SearchScreen />} />
-          <Route path="/composer" element={<ComposerScreen />} />
-          <Route path="/barcode" element={<BarcodeScreen />} />
-          <Route path="/manual" element={<ManualScreen />} />
-          <Route path="/food/:id" element={<FoodDetailScreen />} />
+              {/* Quick-log flow */}
+              <Route path="/add" element={<FabMenu />} />
+              <Route path="/search" element={<SearchScreen />} />
+              <Route path="/composer" element={<ComposerScreen />} />
+              <Route path="/barcode" element={<BarcodeScreen />} />
+              <Route path="/manual" element={<ManualScreen />} />
+              <Route path="/food/:id" element={<FoodDetailScreen />} />
 
-          {/* Nutrition panels */}
-          <Route path="/micro" element={<MicroScreen />} />
-          <Route path="/deficiency" element={<DeficiencyScreen />} />
-          <Route path="/consequences" element={<ConsequencesScreen />} />
+              {/* Nutrition panels */}
+              <Route path="/micro" element={<MicroScreen />} />
+              <Route path="/deficiency" element={<DeficiencyScreen />} />
+              <Route path="/consequences" element={<ConsequencesScreen />} />
 
-          {/* Gamification + reports */}
-          <Route path="/achieve" element={<AchieveScreen />} />
-          <Route path="/report" element={<ReportScreen />} />
+              {/* Gamification + reports */}
+              <Route path="/achieve" element={<AchieveScreen />} />
+              <Route path="/report" element={<ReportScreen />} />
 
-          {/* Trackers */}
-          <Route path="/water" element={<WaterScreen />} />
-          <Route path="/weight" element={<WeightScreen />} />
-          <Route path="/steps-input" element={<Navigate to="/sport" replace />} />
-          <Route path="/sport" element={<SportScreen />} />
+              {/* Trackers */}
+              <Route path="/water" element={<WaterScreen />} />
+              <Route path="/weight" element={<WeightScreen />} />
+              <Route path="/steps-input" element={<Navigate to="/sport" replace />} />
+              <Route path="/sport" element={<SportScreen />} />
 
-          {/* Auth + onboarding */}
-          <Route path="/splash" element={<SplashScreen />} />
-          <Route path="/onboarding/:step" element={<OnboardingStepRoute />} />
-          <Route path="/login" element={<LoginScreen />} />
-          <Route path="/register" element={<RegisterScreen />} />
-          <Route path="/forgot" element={<ForgotScreen />} />
-          <Route path="/reset-password" element={<ResetPasswordScreen />} />
-          <Route path="/quiz/:step" element={<QuizScreen />} />
+              {/* Onboarding / Quiz can be re-accessed if needed, or redirect to home */}
+              <Route path="/quiz/:step" element={<QuizScreen />} />
+              
+              {/* Settings */}
+              <Route path="/lang" element={<LangScreen />} />
+              <Route path="/theme" element={<ThemeScreen />} />
+              <Route path="/perms" element={<PermsScreen />} />
 
-          {/* Settings */}
-          <Route path="/lang" element={<LangScreen />} />
-          <Route path="/theme" element={<ThemeScreen />} />
-          <Route path="/perms" element={<PermsScreen />} />
+              {/* Auth routes when logged in should redirect to home */}
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
+              <Route path="/splash" element={<Navigate to="/" replace />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
         </Routes>
       </Suspense>
       <TweaksPanel />

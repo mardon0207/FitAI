@@ -27,9 +27,11 @@ interface PrefsState {
   lang: Lang;
   theme: Theme;
   primaryColor: string;
+  hasOnboarded: boolean;
   setLang: (lang: Lang) => void;
   setTheme: (theme: Theme) => void;
   setPrimaryColor: (color: string) => void;
+  setHasOnboarded: (val: boolean) => void;
 }
 
 export const usePrefs = create<PrefsState>()(
@@ -38,9 +40,11 @@ export const usePrefs = create<PrefsState>()(
       lang: 'uz',
       theme: 'light',
       primaryColor: DEFAULT_PRIMARY,
+      hasOnboarded: false,
       setLang: (lang) => set({ lang }),
       setTheme: (theme) => set({ theme }),
       setPrimaryColor: (primaryColor) => set({ primaryColor }),
+      setHasOnboarded: (hasOnboarded) => set({ hasOnboarded }),
     }),
     { name: 'fit-prefs' },
   ),

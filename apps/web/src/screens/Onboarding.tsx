@@ -57,6 +57,13 @@ export function OnboardingScreen({ step }: SlideProps) {
   const dark = usePrefs((s) => s.theme === 'dark');
   const navigate = useNavigate();
 
+  const setHasOnboarded = usePrefs((s) => s.setHasOnboarded);
+
+  const handleFinish = () => {
+    setHasOnboarded(true);
+    navigate('/register');
+  };
+
   return (
     <Phone dark={dark}>
       <TopBar
@@ -64,7 +71,7 @@ export function OnboardingScreen({ step }: SlideProps) {
         right={
           <button
             type="button"
-            onClick={() => navigate('/register')}
+            onClick={handleFinish}
             style={{
               fontSize: 14, color: FIT.textMuted, fontWeight: 600,
               paddingRight: 8, background: 'none', border: 'none', cursor: 'pointer',
@@ -135,7 +142,7 @@ export function OnboardingScreen({ step }: SlideProps) {
           size="lg"
           full
           onClick={() => {
-            if (step === 3) navigate('/register');
+            if (step === 3) handleFinish();
             else navigate(`/onboarding/${step + 1}`);
           }}
         >

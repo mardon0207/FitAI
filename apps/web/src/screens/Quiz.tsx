@@ -51,7 +51,16 @@ export function QuizScreen() {
   const navigate = useNavigate();
   const stepNum = Math.max(1, Math.min(6, Number(step)));
 
-  const next = () => navigate(stepNum === 6 ? '/' : `/quiz/${stepNum + 1}`);
+  const setProfile = useProfile((s) => s.updateProfile);
+
+  const next = () => {
+    if (stepNum === 6) {
+      setProfile({ hasCompletedQuiz: true });
+      navigate('/');
+    } else {
+      navigate(`/quiz/${stepNum + 1}`);
+    }
+  };
   const back = () => (stepNum === 1 ? navigate('/register') : navigate(`/quiz/${stepNum - 1}`));
 
   return (

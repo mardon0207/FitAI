@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { Profile, Goal, ActivityLevel, Gender } from '@fit/shared-types';
 
 interface ProfileState extends Profile {
+  hasCompletedQuiz: boolean;
   updateProfile: (p: Partial<ProfileState>) => void;
   pullFromSupabase: () => Promise<void>;
   pushToSupabase: () => Promise<void>;
@@ -13,6 +14,7 @@ interface ProfileState extends Profile {
 export const useProfile = create<ProfileState>()(
   persist(
     (set, get) => ({
+      hasCompletedQuiz: false,
       name: '',
       email: '',
       gender: 'male',
@@ -63,6 +65,7 @@ export const useProfile = create<ProfileState>()(
             weight: Number(data.weight) || get().weight,
             goal: (data.goal as any) || get().goal,
             activityLevel: (data.activity_level as any) || get().activityLevel,
+            hasCompletedQuiz: true,
           });
         }
       },
@@ -87,6 +90,7 @@ export const useProfile = create<ProfileState>()(
 
       reset: () => {
         set({
+          hasCompletedQuiz: false,
           name: '',
           email: '',
           gender: 'male',
