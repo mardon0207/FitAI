@@ -98,7 +98,7 @@ export function ProfileScreen() {
       title: t.healthData,
       items: [
         { icon: 'scale', name: `${t.weight}/${t.weight}`, value: `${profile.height}cm, ${profile.weight}kg`, onClick: () => handleEditMetric('weight', t.weight) },
-        { icon: 'calendar', name: t.today, value: profile.birthDate || t.notConnected, onClick: () => {
+        { icon: 'calendar', name: t.age, value: `${age}`, onClick: () => {
           const bd = prompt('YYYY-MM-DD:', profile.birthDate || '');
           if (bd) profile.updateProfile({ birthDate: bd });
         } },
@@ -213,10 +213,10 @@ export function ProfileScreen() {
              </div>
              <div style={{ flex: 1 }}>
                <div style={{ fontSize: 22, fontWeight: 900, color: FIT.text, letterSpacing: -0.5 }}>
-                 {profile.name || 'Admin'}
+                 {profile.name || t.name}
                </div>
                <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600, marginTop: 2 }}>
-                 {profile.email || 'Email...'}
+                 {profile.email || '...'}
                </div>
                <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

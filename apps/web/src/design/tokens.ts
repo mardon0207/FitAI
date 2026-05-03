@@ -109,6 +109,8 @@ export interface I18NStrings {
   language: string;
   theme: string;
   unit: string;
+  age: string;
+  invalidEmail: string;
   goalWeight: string;
   targetKcal: string;
   days: string;
@@ -318,6 +320,8 @@ export const I18N: Record<Lang, I18NStrings> = {
     language: 'Til',
     theme: 'Tema',
     unit: "O'lchov birligi",
+    age: 'Yosh',
+    invalidEmail: "Email manzili noto'g'ri",
     goalWeight: 'Sizning maqsadingiz',
     targetKcal: 'kkal/kun',
     days: 'kun',
@@ -525,6 +529,8 @@ export const I18N: Record<Lang, I18NStrings> = {
     language: 'Язык',
     theme: 'Тема',
     unit: 'Единицы измерения',
+    age: 'Возраст',
+    invalidEmail: 'Некорректный email',
     goalWeight: 'Ваша цель',
     targetKcal: 'ккал/день',
     days: 'дней',
@@ -732,6 +738,8 @@ export const I18N: Record<Lang, I18NStrings> = {
     language: 'Language',
     theme: 'Theme',
     unit: 'Units',
+    age: 'Age',
+    invalidEmail: 'Invalid email address',
     goalWeight: 'Your Goal',
     targetKcal: 'kcal/day',
     days: 'days',

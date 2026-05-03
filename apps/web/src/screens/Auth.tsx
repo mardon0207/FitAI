@@ -136,6 +136,13 @@ export function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !name) return alert(t.all);
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return alert(t.invalidEmail);
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -145,9 +152,13 @@ export function RegisterScreen() {
           data: { full_name: name }
         }
       });
+      
       if (error) throw error;
+      
       if (data.session) {
         setAuth(data.session.access_token, data.user?.id || '');
+        // Initial setup for the profile store to avoid "Admin" default
+        useProfile.getState().updateProfile({ name, email });
         navigate('/quiz/1');
       } else {
         alert(t.checkEmail);

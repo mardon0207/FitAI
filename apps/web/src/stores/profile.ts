@@ -56,7 +56,7 @@ export const useProfile = create<ProfileState>()(
           const age = birthDate ? Math.floor((new Date().getTime() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) : get().age;
           
           set({
-            name: data.full_name || get().name,
+            name: data.full_name || session.user.user_metadata?.full_name || get().name,
             email: session.user.email || '',
             gender: (data.gender as any) || get().gender,
             birthDate,
