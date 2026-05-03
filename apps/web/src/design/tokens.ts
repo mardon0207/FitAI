@@ -248,6 +248,7 @@ export interface I18NStrings {
   metric: string;
   appleHealth: string;
   appleWatch: string;
+  microNutrients: string;
 }
 
 export const I18N: Record<Lang, I18NStrings> = {
@@ -459,6 +460,7 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Metrik',
     appleHealth: 'Apple Salomatlik',
     appleWatch: 'Apple Watch',
+    microNutrients: 'Mikroelementlar',
   },
   ru: {
     hello: 'Доброе утро',
@@ -668,6 +670,7 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Метрическая',
     appleHealth: 'Apple Здоровье',
     appleWatch: 'Apple Watch',
+    microNutrients: 'Микроэлементы',
   },
   en: {
     hello: 'Good morning',
@@ -877,5 +880,6 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Metric',
     appleHealth: 'Apple Health',
     appleWatch: 'Apple Watch',
+    microNutrients: 'Micro-nutrients',
   },
 };
