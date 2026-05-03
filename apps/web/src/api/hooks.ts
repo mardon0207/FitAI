@@ -14,7 +14,7 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
       const { data, error } = await supabase
         .from('uq_products')
         .select('*')
-        .or(`name_uz.ilike.%${q}%,name_ru.ilike.%${q}%`)
+        .ilike('name_uz', `%${q}%`)
         .limit(50);
 
       if (error) throw error;
