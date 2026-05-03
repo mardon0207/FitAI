@@ -87,7 +87,7 @@ export function App() {
 
   // Sync Supabase session on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       if (session) {
         setAuth(session.access_token, session.user.id);
         pullProfile().then(() => useProfile.getState().pushToSupabase());
@@ -95,7 +95,7 @@ export function App() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any | null) => {
       if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session) {
         setAuth(session.access_token, session.user.id);
         pullProfile().then(() => useProfile.getState().pushToSupabase());

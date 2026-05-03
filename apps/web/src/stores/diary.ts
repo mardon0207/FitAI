@@ -242,7 +242,7 @@ export const useDiary = create<DiaryState>()(
         // Pull Diary
         const { data: diaryData } = await supabase.from('diary_entries').select('*').eq('user_id', uid);
         if (diaryData) {
-          const mapped: DiaryEntry[] = diaryData.map(d => ({
+          const mapped: DiaryEntry[] = diaryData.map((d: any) => ({
             id: d.id,
             foodSlug: d.food_id,
             foodName: d.name,
@@ -266,7 +266,7 @@ export const useDiary = create<DiaryState>()(
         // Pull Water
         const { data: waterData } = await supabase.from('water_logs').select('*').eq('user_id', uid);
         if (waterData) {
-          const mapped: WaterEntry[] = waterData.map(w => ({ id: w.id, date: w.entry_date, addedAt: new Date(w.created_at).getTime(), ml: w.amount_ml }));
+          const mapped: WaterEntry[] = waterData.map((w: any) => ({ id: w.id, date: w.entry_date, addedAt: new Date(w.created_at).getTime(), ml: w.amount_ml }));
           set((s) => ({
             water: [...s.water.filter(e => !mapped.find(m => m.id === e.id)), ...mapped]
           }));
@@ -275,7 +275,7 @@ export const useDiary = create<DiaryState>()(
         // Pull Weight
         const { data: weightData } = await supabase.from('weight_logs').select('*').eq('user_id', uid);
         if (weightData) {
-          const mapped: WeightEntry[] = weightData.map(w => ({ id: w.id, date: w.entry_date, addedAt: new Date(w.created_at).getTime(), kg: w.weight_kg, note: w.note }));
+          const mapped: WeightEntry[] = weightData.map((w: any) => ({ id: w.id, date: w.entry_date, addedAt: new Date(w.created_at).getTime(), kg: w.weight_kg, note: w.note }));
           set((s) => ({
             weight: [...s.weight.filter(e => !mapped.find(m => m.id === e.id)), ...mapped]
           }));
@@ -284,7 +284,7 @@ export const useDiary = create<DiaryState>()(
         // Pull Steps
         const { data: stepsData } = await supabase.from('steps_logs').select('*').eq('user_id', uid);
         if (stepsData) {
-          const mapped: StepEntry[] = stepsData.map(s => ({ date: s.entry_date, steps: s.steps }));
+          const mapped: StepEntry[] = stepsData.map((s: any) => ({ date: s.entry_date, steps: s.steps }));
           set((s) => ({
             steps: [...s.steps.filter(e => !mapped.find(m => m.date === e.date)), ...mapped]
           }));
