@@ -211,30 +211,30 @@ export function SearchScreen() {
                      boxShadow: FIT.shadowSm,
                    }}
                  >
-                   <FoodThumb emoji={r.emoji} photo={r.photoUrl} tone={r.is_recipe ? 'amber' : 'green'} size={48} />
+                   <FoodThumb emoji={r.emoji} photo={r.photoUrl} tone={r.isRecipe ? 'amber' : 'green'} size={48} />
                    <div style={{ flex: 1, minWidth: 0 }}>
                      <div style={{ fontSize: 15, fontWeight: 800, color: FIT.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                        {r.name}
                      </div>
                      <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
                        <span style={{ 
-                         padding: '2px 6px', background: r.is_recipe ? `${FIT.accent}15` : `${FIT.primary}15`,
-                         color: r.is_recipe ? FIT.accent : FIT.primary,
+                         padding: '2px 6px', background: r.isRecipe ? `${FIT.accent}15` : `${FIT.primary}15`,
+                         color: r.isRecipe ? FIT.accent : FIT.primary,
                          borderRadius: 6, fontSize: 9, fontWeight: 800, textTransform: 'uppercase'
                        }}>
-                         {r.is_recipe ? t.national : t.ingredient}
+                         {r.isRecipe ? t.national : t.ingredient}
                        </span>
                        {r.category && ` · ${r.category}`}
                      </div>
                      <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 10, fontWeight: 700, fontFamily: FIT.mono }}>
-                        <span style={{ color: FIT.protein }}>P {r.protein_g?.toFixed(0)}</span>
-                        <span style={{ color: FIT.carbs }}>C {r.carbs_g?.toFixed(0)}</span>
-                        <span style={{ color: FIT.fat }}>F {r.fat_g?.toFixed(0)}</span>
+                        <span style={{ color: FIT.protein }}>P {r.proteinG?.toFixed(0)}</span>
+                        <span style={{ color: FIT.carbs }}>C {r.carbsG?.toFixed(0)}</span>
+                        <span style={{ color: FIT.fat }}>F {r.fatG?.toFixed(0)}</span>
                      </div>
                    </div>
                    <div style={{ textAlign: 'right' }}>
                      <div style={{ fontSize: 22, fontWeight: 900, fontFamily: FIT.mono, color: FIT.primary, letterSpacing: -1 }}>
-                       {Math.round(r.kcal_per_100g ?? 0)}
+                       {Math.round(r.kcalPer100g ?? 0)}
                      </div>
                      <div style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase' }}>{t.kcal}</div>
                    </div>

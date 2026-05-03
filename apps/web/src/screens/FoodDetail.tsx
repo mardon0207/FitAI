@@ -183,6 +183,32 @@ export function FoodDetailScreen() {
                 ))}
              </div>
           </div>
+
+          {/* Micro-nutrients */}
+          {Object.keys(nutrients).some(k => !['kcal', 'protein', 'carbs', 'fat'].includes(k)) && (
+            <div style={{ marginTop: 24, paddingBottom: 40 }}>
+               <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text, marginBottom: 12 }}>{t.microNutrients || 'Mikroelementlar'}</div>
+               <div style={{ 
+                 display: 'grid', 
+                 gridTemplateColumns: '1fr 1fr 1fr', 
+                 gap: 8,
+                 background: dark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                 padding: 16,
+                 borderRadius: 20,
+                 border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`
+               }}>
+                  {Object.entries(nutrients)
+                    .filter(([k]) => !['kcal', 'protein', 'carbs', 'fat'].includes(k))
+                    .map(([k, v]) => (
+                      <div key={k} style={{ textAlign: 'center' }}>
+                         <div style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase' }}>{k}</div>
+                         <div style={{ fontSize: 13, fontWeight: 800, color: FIT.text }}>{fmt(v, 1)}<span style={{ fontSize: 9, marginLeft: 1 }}>mg</span></div>
+                      </div>
+                    ))
+                  }
+               </div>
+            </div>
+          )}
         </div>
       </div>
 

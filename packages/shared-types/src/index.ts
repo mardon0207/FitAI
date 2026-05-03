@@ -23,6 +23,7 @@ export interface FoodSummary {
   proteinG?: number | null;
   carbsG?: number | null;
   fatG?: number | null;
+  isRecipe?: boolean;
 }
 
 export interface FoodDetail extends FoodSummary {

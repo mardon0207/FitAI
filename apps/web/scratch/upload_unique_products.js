@@ -29,20 +29,23 @@ async function uploadUniqueProducts() {
                 const carbs = parseFloat(parts[5]) || 0;
                 const fat = parseFloat(parts[6]) || 0;
                 
-                const micros = {
-                    fe: parts[7] !== '0' ? parts[7] + "mg" : null,
-                    mg: parts[8] !== '0' ? parts[8] + "mg" : null,
-                    ca: parts[9] !== '0' ? parts[9] + "mg" : null,
-                    p: parts[10] !== '0' ? parts[10] + "mg" : null,
-                    k: parts[11] !== '0' ? parts[11] + "mg" : null,
-                    na: parts[12] !== '0' ? parts[12] + "mg" : null
-                };
+                const fe = parts[7] !== '0' ? parts[7] : null;
+                const mg = parts[8] !== '0' ? parts[8] : null;
+                const ca = parts[9] !== '0' ? parts[9] : null;
+                const p = parts[10] !== '0' ? parts[10] : null;
+                const k = parts[11] !== '0' ? parts[11] : null;
+                const na = parts[12] !== '0' ? parts[12] : null;
 
-                // Remove null values from micros
-                Object.keys(micros).forEach(key => micros[key] === null && delete micros[key]);
+                const micros = {};
+                if (fe) micros.Fe = fe;
+                if (mg) micros.Mg = mg;
+                if (ca) micros.Ca = ca;
+                if (p) micros.P = p;
+                if (k) micros.K = k;
+                if (na) micros.Na = na;
 
+                const type = (parts[13] || 'Ingredient').toLowerCase();
                 const slug = parts[14];
-                const type = parts[13];
 
                 products.push({
                     slug,
@@ -54,7 +57,8 @@ async function uploadUniqueProducts() {
                         protein,
                         carbs,
                         fat,
-                        micros: Object.keys(micros).length > 0 ? micros : {}
+                        type,
+                        micros
                     }
                 });
             }
@@ -72,8 +76,7 @@ async function uploadUniqueProducts() {
             .upsert(batch);
 
         if (error) {
-            console.error(`Error uploading batch ${i / batchSize}:`, error);
-            // If the table doesn't exist, we'll get an error here.
+            console.error(`Error uploading batch ${Math.floor(i / batchSize)}:`, error);
             return;
         }
         console.log(`Uploaded batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(products.length / batchSize)}`);
