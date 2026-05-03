@@ -8,14 +8,25 @@ import type {
 // ─── Foods ───────────────────────────────────────────────
 export function useSearchFoods(q: string, lang: string, enabled = true) {
   return useQuery({
-    queryKey: ['foods', 'search', q, lang],
+    queryKey: ['uq_products', 'search', q, lang],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('search_foods', {
-        search_query: q,
-        search_lang: lang,
-      });
+      // Querying the new unique products table directly
+      const { data, error } = await supabase
+        .from('uq_products')
+        .select('*')
+        .or(`name_uz.ilike.%${q}%,name_ru.ilike.%${q}%`)
+        .limit(50);
+
       if (error) throw error;
-      return data as FoodSummary[];
+      
+      return (data as any[]).map(food => ({
+        id: food.slug,
+        name: food.name_uz,
+        emoji: food.emoji,
+        category: food.category,
+        source: 'uz',
+        kcal: food.per_100g.kcal,
+      })) as FoodSummary[];
     },
     enabled: enabled && q.length > 0,
     staleTime: 60_000,
@@ -24,11 +35,11 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
 
 export function useFood(id: string | undefined) {
   return useQuery({
-    queryKey: ['foods', id],
+    queryKey: ['uq_products', id],
     queryFn: async () => {
-      // First try to find in foods
+      // First try to find in uq_products
       const { data: food, error: foodError } = await supabase
-        .from('foods')
+        .from('uq_products')
         .select('*')
         .eq('slug', id)
         .maybeSingle();
@@ -61,7 +72,7 @@ export function useFood(id: string | undefined) {
       // If not found, try recipes
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
-        .select('*, recipe_ingredients(*, foods(*))')
+        .select('*, recipe_ingredients(*, uq_products:foods(*))') // Note: related table might still be named 'foods' in foreign keys, but we can't easily change DB relationships here.
         .eq('slug', id)
         .maybeSingle();
 
@@ -97,12 +108,12 @@ export function useFood(id: string | undefined) {
 
 export function useFoods(slugs: string[]) {
   return useQuery({
-    queryKey: ['foods', 'batch', slugs.join(',')],
+    queryKey: ['uq_products', 'batch', slugs.join(',')],
     queryFn: async () => {
       if (slugs.length === 0) return [];
       
       const [foodsRes, recipesRes] = await Promise.all([
-        supabase.from('foods').select('*').in('slug', slugs),
+        supabase.from('uq_products').select('*').in('slug', slugs),
         supabase.from('recipes').select('*').in('slug', slugs),
       ]);
 
