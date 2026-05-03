@@ -1,6 +1,6 @@
 // 6-step onboarding quiz. Ported from design/screens-a.jsx (ScreenQuiz1..6).
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Phone, Card, Chip, Button } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
@@ -211,7 +211,7 @@ function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
   const updateProfile = useProfile((s) => s.updateProfile);
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 50 }, (_, i) => currentYear - 15 - i);
+  const years = Array.from({ length: 70 }, (_, i) => currentYear - 10 - i);
   const userYear = currentYear - profile.age;
 
   return (
@@ -220,16 +220,34 @@ function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
       <div style={{ flex: 1, padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Card pad={16}>
           <div style={{
-            fontSize: 11, color: FIT.textMuted, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: 12,
           }}>
-            Tug&apos;ilgan yil
+            <div style={{
+              fontSize: 11, color: FIT.textMuted, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: 1,
+            }}>
+              Tug&apos;ilgan yil
+            </div>
+            <button
+              onClick={() => {
+                const val = window.prompt("Tug'ilgan yilingizni kiriting (masalan, 1990):", String(userYear));
+                if (val && !isNaN(Number(val))) updateProfile({ age: currentYear - Number(val) });
+              }}
+              style={{
+                fontSize: 12, color: FIT.primary, fontWeight: 700,
+                background: 'none', border: 'none', cursor: 'pointer',
+              }}
+            >
+              Yozish ✍️
+            </button>
           </div>
           <div style={{
-            display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
+            display: 'flex', gap: 12, alignItems: 'center',
             overflowX: 'auto', paddingBottom: 8,
+            scrollbarWidth: 'none', msOverflowStyle: 'none',
           }}>
-            {years.slice(0, 7).map((y) => {
+            {years.map((y) => {
               const isActive = y === userYear;
               return (
                 <button
@@ -242,6 +260,8 @@ function Step3({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
                     color: isActive ? FIT.primary : FIT.textSubtle,
                     padding: '8px 12px', opacity: isActive ? 1 : 0.5,
                     background: 'none', border: 'none', cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    minWidth: 70,
                   }}
                 >
                   {y}
@@ -372,11 +392,61 @@ function Step5({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
 }
 
 function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const targetKcal = useProfile((s) => s.targetKcal) || 2000;
-  const targetProtein = useProfile((s) => s.targetProtein);
-  const targetCarbs = useProfile((s) => s.targetCarbs);
-  const targetFat = useProfile((s) => s.targetFat);
-  const targets = { kcal: targetKcal, protein: targetProtein, carbs: targetCarbs, fat: targetFat };
+  const profile = useProfile();
+  const updateProfile = useProfile((s) => s.updateProfile);
+
+  // Mifflin-St Jeor Formula
+  useEffect(() => {
+    const { weight, height, age, gender, activityLevel, goal } = profile;
+    
+    // BMR calculation
+    let bmr = 10 * weight + 6.25 * height - 5 * age;
+    if (gender === 'male') bmr += 5;
+    else bmr -= 161;
+
+    // Activity Multiplier
+    const multipliers = {
+      sedentary: 1.2,
+      moderate: 1.55,
+      active: 1.725
+    };
+    const tdee = bmr * (multipliers[activityLevel as keyof typeof multipliers] || 1.5);
+
+    // Goal adjustment
+    let targetKcal = Math.round(tdee);
+
+    if (goal === 'lose') {
+      targetKcal -= 500;
+    } else if (goal === 'gain') {
+      targetKcal += 500;
+    }
+
+    // Standard macros distribution (Protein: 30%, Carbs: 45%, Fat: 25%)
+    const p = Math.round((targetKcal * 0.3) / 4);
+    const c = Math.round((targetKcal * 0.45) / 4);
+    const f = Math.round((targetKcal * 0.25) / 9);
+
+    // Initial sync
+    updateProfile({
+      targetKcal,
+      targetProtein: p,
+      targetCarbs: c,
+      targetFat: f
+    });
+  }, []);
+
+  const targets = { 
+    kcal: profile.targetKcal || 2000, 
+    protein: profile.targetProtein || 150, 
+    carbs: profile.targetCarbs || 200, 
+    fat: profile.targetFat || 65 
+  };
+
+  const advice = profile.goal === 'lose' 
+    ? "Vazn kamaytirish uchun kunlik 500 kkal kam iste'mol qilishni tavsiya qildik."
+    : profile.goal === 'gain'
+    ? "Mushak massasini oshirish uchun kunlik 500 kkal ko'proq iste'mol qilishni tavsiya qildik."
+    : "Vazningizni me'yorda saqlash uchun ushbu miqdorni tavsiya qilamiz.";
 
   return (
     <>
@@ -390,13 +460,20 @@ function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
           style={{
             background: `linear-gradient(135deg, ${FIT.primarySoft}, #fff)`,
             border: `1px solid ${FIT.primary}22`,
+            cursor: 'pointer'
+          }}
+          onClick={() => {
+            const val = window.prompt("Kunlik kaloriya maqsadini o'zgartirish:", String(targets.kcal));
+            if (val) updateProfile({ targetKcal: Number(val) });
           }}
         >
           <div style={{
             fontSize: 12, color: FIT.primaryDark, fontWeight: 700,
             textTransform: 'uppercase', letterSpacing: 1,
+            display: 'flex', justifyContent: 'space-between'
           }}>
-            Kunlik maqsad
+            <span>Kunlik maqsad</span>
+            <span style={{ fontSize: 14 }}>✍️</span>
           </div>
           <div style={{
             fontSize: 56, fontWeight: 800, fontFamily: FIT.mono,
@@ -409,11 +486,19 @@ function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
             {[
-              { n: 'Oqsil', v: `${targets.protein}g`, c: FIT.protein },
-              { n: 'Uglevod', v: `${targets.carbs}g`, c: FIT.carbs },
-              { n: "Yog'", v: `${targets.fat}g`, c: FIT.fat },
+              { n: 'Oqsil', v: `${targets.protein}g`, c: FIT.protein, key: 'targetProtein' },
+              { n: 'Uglevod', v: `${targets.carbs}g`, c: FIT.carbs, key: 'targetCarbs' },
+              { n: "Yog'", v: `${targets.fat}g`, c: FIT.fat, key: 'targetFat' },
             ].map((m) => (
-              <div key={m.n} style={{ flex: 1 }}>
+              <div 
+                key={m.n} 
+                style={{ flex: 1 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const val = window.prompt(`${m.n} miqdorini o'zgartirish (g):`, m.v.replace('g', ''));
+                  if (val) updateProfile({ [m.key]: Number(val) });
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 4, background: m.c }} />
                   <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{m.n}</span>
@@ -429,7 +514,7 @@ function Step6({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ fontSize: 20 }}>💡</div>
             <div style={{ fontSize: 13, color: '#92400E', lineHeight: 1.5 }}>
-              Vazn kamaytirish uchun kunlik 500 kkal kam iste&apos;mol qilishni tavsiya qildik.
+              {advice}
             </div>
           </div>
         </Card>
