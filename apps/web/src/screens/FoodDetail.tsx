@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Phone, TopBar, Chip, Button } from '@/design/primitives';
+import { Phone, TopBar, Chip, Button, FoodThumb } from '@/design/primitives';
 import { FIT } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
 import { useFood } from '@/api/hooks';
@@ -66,6 +66,7 @@ export function FoodDetailScreen() {
       foodSlug: String(food.id),
       foodName: food.name,
       foodEmoji: food.emoji ?? undefined,
+      foodPhotoUrl: food.photoUrl,
       mealType: meal,
       quantity: qty,
       unit,

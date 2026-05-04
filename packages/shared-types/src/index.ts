@@ -24,6 +24,7 @@ export interface FoodSummary {
   carbsG?: number | null;
   fatG?: number | null;
   isRecipe?: boolean;
+  photoUrl?: string | null;
 }
 
 export interface FoodDetail extends FoodSummary {
@@ -37,6 +38,7 @@ export interface DiaryEntry {
   foodSlug: string;
   foodName?: string;
   foodEmoji?: string;
+  foodPhotoUrl?: string | null;
   mealType: MealType;
   date: string;
   addedAt: number;

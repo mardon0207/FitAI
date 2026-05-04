@@ -216,7 +216,7 @@ export function DiaryScreen() {
                             layout
                           >
                             <Card pad={12} style={{ display: 'flex', gap: 12, alignItems: 'center', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                              <FoodThumb emoji={emoji} photo={undefined} tone={isComposed ? 'purple' : 'amber'} size={44} />
+                              <FoodThumb emoji={emoji} photo={e.foodPhotoUrl ?? undefined} tone={isComposed ? 'purple' : 'amber'} size={44} />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, color: FIT.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {name}
