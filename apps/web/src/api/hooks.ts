@@ -32,6 +32,7 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
         defaultUnit: food.default_unit || 'g',
         defaultQty: 100,
         isRecipe: food.per_100g.type === 'recipe',
+        photoUrl: `/foods/${food.slug}.jpeg`,
       })) as FoodSummary[];
     },
     enabled: enabled && q.length > 0,
@@ -72,6 +73,7 @@ export function useFood(id: string | undefined) {
               fat: food.per_100g.fat,
               ...(food.per_100g.micros || {}),
             },
+            photoUrl: `/foods/${food.slug}.jpeg`,
           } as FoodDetail;
       }
 
@@ -103,6 +105,7 @@ export function useFood(id: string | undefined) {
             carbs: recipe.carbs_per_100g,
             fat: recipe.fat_per_100g,
           },
+          photoUrl: `/foods/${recipe.slug}.jpeg`,
         } as FoodDetail;
       }
 
@@ -148,6 +151,7 @@ export function useFoods(slugs: string[]) {
               fat: food.per_100g.fat,
               ...(food.per_100g.micros || {}),
             },
+            photoUrl: `/foods/${food.slug}.jpeg`,
           } as FoodDetail);
         });
       }
@@ -174,6 +178,7 @@ export function useFoods(slugs: string[]) {
               carbs: recipe.carbs_per_100g,
               fat: recipe.fat_per_100g,
             },
+            photoUrl: `/foods/${recipe.slug}.jpeg`,
           } as FoodDetail);
         });
       }
