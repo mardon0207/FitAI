@@ -286,7 +286,7 @@ function IngredientCard({ ing, lang, foodIndex, onUpdate, onRemove, t }: Ingredi
   return (
     <Card pad={14} style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', gap: 12 }}>
-        <FoodThumb emoji={food.emoji} photo={food.photoUrl} tone={food.is_recipe ? 'amber' : 'green'} size={44} />
+        <FoodThumb emoji={food.emoji} photo={food.photoUrl ?? undefined} tone={food.is_recipe ? 'amber' : 'green'} size={44} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ minWidth: 0, paddingRight: 8 }}>

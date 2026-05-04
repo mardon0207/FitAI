@@ -213,7 +213,7 @@ export function SearchScreen() {
                      boxShadow: FIT.shadowSm,
                    }}
                  >
-                   <FoodThumb emoji={r.emoji} photo={r.photoUrl} tone={r.isRecipe ? 'amber' : 'green'} size={48} />
+                   <FoodThumb emoji={r.emoji} photo={r.photoUrl ?? undefined} tone={r.isRecipe ? 'amber' : 'green'} size={48} />
                    <div style={{ flex: 1, minWidth: 0 }}>
                      <div style={{ fontSize: 15, fontWeight: 800, color: FIT.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                        {r.name}
