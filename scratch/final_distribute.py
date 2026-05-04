@@ -3,7 +3,7 @@ import json
 import shutil
 
 src = r'c:\Users\admin\OneDrive\Рабочий стол\NewProg\FitAI\gen_pic_foods'
-dst = r'c:\Users\admin\OneDrive\Рабочий стол\NewProg\FitAI\public\foods'
+dst = r'c:\Users\admin\OneDrive\Рабочий стол\NewProg\FitAI\apps\web\public\foods'
 map_path = r'c:\Users\admin\OneDrive\Рабочий стол\NewProg\FitAI\scratch\id_to_slugs.json'
 
 if not os.path.exists(dst):
