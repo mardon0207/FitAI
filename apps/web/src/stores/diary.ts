@@ -29,6 +29,7 @@ export interface AddEntryParams {
   micros?: Record<string, number>;
   date?: string;
   note?: string;
+  foodPhotoUrl?: string | null;
 }
 
 interface DiaryState {
@@ -110,6 +111,7 @@ export const useDiary = create<DiaryState>()(
             Object.entries(p.micros ?? {}).map(([k, v]) => [k, round2(v)]),
           ),
           note: p.note,
+          foodPhotoUrl: p.foodPhotoUrl,
         };
         set((s) => ({ entries: [...s.entries, entry] }));
         get().pushEntryToSupabase(entry);
