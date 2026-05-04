@@ -109,7 +109,14 @@ export function FoodDetailScreen() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: -40, overflow: 'hidden'
         }}>
-          <div style={{ fontSize: 100, position: 'relative', zIndex: 2 }}>{food.emoji ?? '🍽'}</div>
+          <div style={{ position: 'relative', zIndex: 2, width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FoodThumb 
+              emoji={food.emoji ?? '🍽'} 
+              photo={food.photoUrl} 
+              tone={food.isRecipe ? 'amber' : 'green'} 
+              size={140} 
+            />
+          </div>
         </div>
 
         <div style={{ position: 'relative', zIndex: 3, padding: '0 20px' }}>

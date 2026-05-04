@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI Prompt Copier</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: #f0f2f5; 
+            color: #1c1e21; 
+            padding: 40px 20px;
+            margin: 0;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            text-align: center; 
+            color: #1877f2; 
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #65676b;
+            margin-bottom: 30px;
+        }
+        .search-box { 
+            width: 100%; 
+            padding: 15px; 
+            margin-bottom: 25px; 
+            border: 2px solid #e4e6eb; 
+            border-radius: 10px; 
+            font-size: 18px; 
+            box-sizing: border-box; 
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-box:focus {
+            border-color: #1877f2;
+        }
+        .list-header {
+            display: flex;
+            padding: 10px 15px;
+            background: #f0f2f5;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #65676b;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        .prompt-card { 
+            background: #fff; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            border-radius: 10px; 
+            border: 1px solid #e4e6eb;
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+            transition: all 0.2s;
+        }
+        .prompt-card:hover { 
+            border-color: #1877f2;
+            box-shadow: 0 2px 8px rgba(24, 119, 242, 0.1);
+        }
+        .prompt-text { 
+            flex-grow: 1; 
+            font-size: 15px; 
+            color: #050505; 
+            line-height: 1.5; 
+        }
+        .id-badge { 
+            background: #e7f3ff; 
+            color: #1877f2; 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-family: monospace;
+            font-weight: bold; 
+            font-size: 14px; 
+            min-width: 90px; 
+            text-align: center; 
+        }
+        .copy-btn { 
+            background: #1877f2; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 14px;
+            white-space: nowrap; 
+            transition: background 0.2s; 
+        }
+        .copy-btn:hover { 
+            background: #166fe5; 
+        }
+        .copy-btn.copied { 
+            background: #42b72a; 
+        }
+        .counter {
+            text-align: right;
+            font-size: 14px;
+            color: #65676b;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ FitAI Image Helper</h1>
+        <p class="subtitle">Нажмите кнопку, чтобы мгновенно скопировать промпт для Google Flow</p>
+        
+        <input type="text" id="search" class="search-box" placeholder="Поиск по названию или ID (например: FITAI_050)...">
+        
+        <div class="list-header">
+            <div style="width: 110px">ID</div>
+            <div style="flex-grow: 1">Промпт (Prompt)</div>
+            <div style="width: 120px; text-align: right">Действие</div>
+        </div>
+        
+        <div id="list"></div>
+        <div class="counter" id="counter"></div>
+    </div>
+
+    <script>
+        const prompts = ["Professional food photography of Uzbek Plov (Pilaf) in a traditional ceramic plate, steaming hot, tender chunks of lamb, yellow and red carrots, garlic bulb on top, cinematic lighting, wooden table background, 8k, ultra-realistic. (Reference: FITAI_001)", "Professional food photography of Uzbek Manti (steamed dumplings), thin translucent dough, garnished with black pepper and a side of sour cream, elegant presentation, soft morning light, macro shot, 8k. (Reference: FITAI_002)", "Professional food photography of several golden-brown flaky Somsa (samosas), sesame seeds on top, triangular shape, warm lighting, rustic wooden board, ultra-detailed texture, 8k. (Reference: FITAI_003)", "Professional food photography of a rich traditional Uzbek soup (Shurva) in a blue ceramic bowl, chunks of lamb, potatoes, bell peppers, fresh herbs on top, dark moody background, cinematic steam, 8k. (Reference: FITAI_004)", "Professional food photography of Dimlama, layers of braised beef, cabbage, potatoes, and carrots in a cast iron pot, rich textures, vibrant colors, close-up, 8k. (Reference: FITAI_005)", "Professional food photography of Uzbek Norin, finely hand-cut noodles and shredded horse meat, served on a traditional plate with a side of clear broth, minimalist aesthetic, 8k. (Reference: FITAI_006)", "Professional food photography of Uzbek Lagman, long hand-pulled noodles topped with a rich meat and vegetable sauce, vibrant peppers, herbs, cinematic lighting, steam, 8k. (Reference: FITAI_007)", "Professional food photography of Uzbek Kazan-Kabob, golden fried meat and potatoes, crispy texture, garnished with onion rings and herbs, rustic metal plate, warm light, 8k. (Reference: FITAI_008)", "Professional food photography of a row of Uzbek Shashlik skewers, grilled meat with charred edges, served with sliced raw onions and vinegar, traditional embroidery background, 8k. (Reference: FITAI_009)", "Professional food photography of golden roasted potatoes with garlic and herbs, creamy mashed potatoes in the background, elegant ceramic bowl, soft natural light, 8k. (Reference: FITAI_010)", "Professional food photography of a tall glass of fresh cold milk, splashes, white background, minimalist, clean, soft studio lighting, 8k. (Reference: FITAI_011)", "Professional food photography of a glass of thick white Kefir, creamy texture, ceramic cup, rustic stone background, soft natural light, high-end feel, 8k. (Reference: FITAI_012)", "Professional food photography of a small white bowl of thick sour cream or qaymoq, a spoon dipping in, silky smooth texture, light grey background, elegant, 8k. (Reference: FITAI_013)", "Professional food photography of fresh white cottage cheese (tvorog) in a wooden bowl, crumbly texture, healthy breakfast vibe, bright natural light, 8k. (Reference: FITAI_014)", "Professional food photography of various types of gourmet cheese on a marble board, grapes and nuts on the side, premium deli look, dramatic lighting, 8k. (Reference: FITAI_015)", "Professional food photography of creamy spreadable cheese in a small container, garnished with herbs, elegant presentation, 8k. (Reference: FITAI_016)", "Professional food photography of a bowl of thick creamy yogurt, topped with a few fresh berries or nuts, clean white aesthetic, 8k. (Reference: FITAI_017)", "Professional food photography of fresh brown and white farm eggs in a wicker basket, soft hay, rustic farmhouse kitchen background, warm natural light, 8k. (Reference: FITAI_018)", "Professional food photography of thick condensed milk pouring from a spoon, glossy texture, creamy color, minimalist background, 8k. (Reference: FITAI_019)", "Professional food photography of a classic dairy ice cream bar on a stick (eskimo) or a scoop of plombir, frosty texture, elegant presentation, 8k. (Reference: FITAI_020)", "Professional food photography of fresh crisp red apples and yellow quince with leaves, dewy surface, rustic wooden background, bright highlights, 8k. (Reference: FITAI_021)", "Professional food photography of a bunch of ripe bright yellow bananas, isolated on a soft yellow background, clean minimalist aesthetic, studio lighting, 8k. (Reference: FITAI_022)", "Professional food photography of an assortment of citrus fruits, whole and sliced, vibrant colors, refreshing look, bright sunny lighting, 8k. (Reference: FITAI_023)", "Professional food photography of a split open pomegranate showing ruby-red seeds, dark background, dramatic cinematic lighting, 8k. (Reference: FITAI_024)", "Professional food photography of elegant ripe pears, green and yellow skin, rustic vibe, soft side lighting, 8k. (Reference: FITAI_025)", "Professional food photography of fuzzy ripe peaches, golden and pink colors, sun-drenched lighting, 8k. (Reference: FITAI_026)", "Professional food photography of a bunch of fresh green and purple grapes, dewy, hanging, light background, 8k. (Reference: FITAI_027)", "Professional food photography of a thick slice of cold juicy red watermelon and sweet yellow melon, seeds visible, summer vibe, bright light, 8k. (Reference: FITAI_028)", "Professional food photography of a bowl of assorted fresh berries, vibrant colors, macro shot, water droplets, 8k. (Reference: FITAI_029)", "Professional food photography of ripe purple figs, orange persimmons, and dark plums, elegant presentation, soft afternoon light, 8k. (Reference: FITAI_030)", "Professional food photography of a bowl of sun-dried orange apricots, chewy texture, warm lighting, rustic wooden surface, 8k. (Reference: FITAI_031)", "Professional food photography of fine white coconut flour and tan chestnut flour in small glass jars, minimalist baking aesthetic, 8k. (Reference: FITAI_032)", "Professional food photography of bright red ripe tomatoes on a green vine, dark background, water droplets, cinematic lighting, 8k. (Reference: FITAI_033)", "Professional food photography of crisp fresh green cucumbers, sliced, vibrant green interior, white background, clean and refreshing, 8k. (Reference: FITAI_034)", "Professional food photography of red, yellow, and green bell peppers, shiny skin, bright colors, artistic arrangement, 8k. (Reference: FITAI_035)", "Professional food photography of organic raw potatoes with bits of soil, rustic burlap sack, earthy tones, soft lighting, 8k. (Reference: FITAI_036)", "Professional food photography of bunch of fresh orange carrots with green tops, earthy background, vibrant color, 8k. (Reference: FITAI_037)", "Professional food photography of red, white and yellow onions, papery skin texture, dark moody background, 8k. (Reference: FITAI_038)", "Professional food photography of fresh green broccoli and cabbage, intricate textures, bright green color, minimalist grey background, 8k. (Reference: FITAI_039)", "Professional food photography of shiny deep purple eggplants and fresh green zucchinis, sleek textures, modern lighting, 8k. (Reference: FITAI_040)", "Professional food photography of fresh green bundles of cilantro, basil, and dills, vibrant green, wooden table, soft natural light, 8k. (Reference: FITAI_041)", "Professional food photography of various types of mushrooms like shiitake, portabella, and oyster mushrooms, earthy textures, soft moody lighting, 8k. (Reference: FITAI_042)", "Professional food photography of a pile of fresh vibrant green kale and spinach leaves, dewy, bright white background, healthy aesthetic, 8k. (Reference: FITAI_043)", "Professional food photography of assorted root vegetables like beets and radishes with their greens, earthy tones, soft side lighting, 8k. (Reference: FITAI_044)", "Professional food photography of fresh yellow corn on the cob, some husk peeled back, steaming hot, bright sunny lighting, 8k. (Reference: FITAI_045)", "Professional food photography of fresh green snap beans and green peas in pods, vibrant green, water droplets, minimalist, 8k. (Reference: FITAI_046)", "Professional food photography of a small bowl of green and black olives, glossy texture, garnished with a sprig of rosemary, 8k. (Reference: FITAI_047)", "Professional food photography of dried nori sheets and rehydrated wakame seaweed, dark textures, minimalist Japanese aesthetic, 8k. (Reference: FITAI_048)", "Professional food photography of fresh green asparagus and artichokes, elegant arrangement, soft natural light, 8k. (Reference: FITAI_049)", "Professional food photography of a thick, marbled raw ribeye beef steak on a dark stone board, coarse sea salt, rosemary sprig, cinematic lighting, 8k. (Reference: FITAI_050)", "Professional food photography of fresh raw lamb chops with bone, bright red meat, rosemary and garlic cloves, rustic wooden background, 8k. (Reference: FITAI_051)", "Professional food photography of fresh raw chicken breast fillets on a clean white plate, garnishing herbs, soft bright lighting, clean aesthetic, 8k. (Reference: FITAI_052)", "Professional food photography of raw turkey breast fillet, pale pink meat, minimalist background, natural lighting, 8k. (Reference: FITAI_053)", "Professional food photography of a raw duck breast with scored skin, rich dark meat, scattered black peppercorns, elegant dark background, 8k. (Reference: FITAI_054)", "Professional food photography of fresh raw pork loin chops, pink meat with white fat trim, marble surface, bright studio lighting, 8k. (Reference: FITAI_055)", "Professional food photography of sliced Qazi (horse meat sausage) with visible fat circles, served on a traditional Uzbek ceramic plate, 8k. (Reference: FITAI_056)", "Professional food photography of an assortment of sausages and salamis, sliced, artistic arrangement on a wooden board, 8k. (Reference: FITAI_057)", "Professional food photography of thin slices of pink ham, folded elegantly on a white platter, soft natural light, 8k. (Reference: FITAI_058)", "Professional food photography of fresh raw liver, smooth glossy texture, deep maroon color, minimalist presentation, 8k. (Reference: FITAI_059)", "Professional food photography of raw rabbit meat pieces, very lean and pale, rustic wooden table, soft lighting, 8k. (Reference: FITAI_060)", "Professional food photography of meat aspic (xolodets) in a glass dish, visible meat pieces and carrots inside clear jelly, 8k. (Reference: FITAI_061)", "Professional food photography of seasoned meat cutlets (raw), herbs and spices scattered around, dark moody background, 8k. (Reference: FITAI_062)", "Professional food photography of pale fish sausage, sliced, garnished with lemon and dill, light airy background, 8k. (Reference: FITAI_063)", "Professional food photography of a fresh pink raw salmon fillet on a bed of crushed ice, lemon slices and dill, bright natural light, 8k. (Reference: FITAI_064)", "Professional food photography of a thick raw red tuna steak, sesame seeds, minimalist dark plate, cinematic lighting, 8k. (Reference: FITAI_065)", "Professional food photography of fresh raw white fish fillets, flaky texture, garnished with peppercorns and lemon, light grey stone background, 8k. (Reference: FITAI_066)", "Professional food photography of fresh raw tiger shrimps on ice, translucent shells, vibrant colors, bright studio lighting, 8k. (Reference: FITAI_067)", "Professional food photography of fresh oysters on the half shell, bed of ice, lemon wedges, elegant presentation, 8k. (Reference: FITAI_068)", "Professional food photography of fresh raw squid, white translucent flesh, minimalist arrangement on a dark background, 8k. (Reference: FITAI_069)", "Professional food photography of fresh crab legs and a bowl of white crab meat, wooden table, soft natural light, 8k. (Reference: FITAI_070)", "Professional food photography of small silver fish arranged neatly on a plate, sea salt, rustic aesthetic, 8k. (Reference: FITAI_071)", "Professional food photography of a small glass bowl of bright orange fish roe, mother of pearl spoon, elegant dark background, 8k. (Reference: FITAI_072)", "Professional food photography of smoked fish fillet, golden brown skin, wooden board, rustic moody lighting, 8k. (Reference: FITAI_073)", "Professional food photography of an assortment of fresh seafood on ice, vibrant colors, blue Mediterranean lighting, 8k. (Reference: FITAI_074)", "Professional food photography of a ceramic bowl filled with raw Devzira rice grains, distinct reddish-brown color, minimalist wooden background, 8k. (Reference: FITAI_075)", "Professional food photography of raw buckwheat and bulgur grains in rustic cloth bags, earthy textures, warm lighting, 8k. (Reference: FITAI_076)", "Professional food photography of a fresh golden Uzbek Lepyoshka (bread) with traditional stamped patterns, steam rising, warm bakery lighting, 8k. (Reference: FITAI_077)", "Professional food photography of a pile of golden fried Bo'g'irsoq and Cheburek on a traditional plate, crispy texture, warm inviting light, 8k. (Reference: FITAI_078)", "Professional food photography of a pile of white flour and some golden biscuits, baking aesthetic, soft powder textures, 8k. (Reference: FITAI_079)", "Professional food photography of an assortment of dry colorful legumes, beans, lentils, and chickpeas in small glass jars, bright organized pantry look, 8k. (Reference: FITAI_080)", "Professional food photography of assorted dry pasta shapes (penne, fusilli) spilling out of a paper bag, clean minimalist background, 8k. (Reference: FITAI_081)", "Professional food photography of a bowl of golden bread crumbs, rustic kitchen setting, soft natural light, 8k. (Reference: FITAI_082)", "Professional food photography of broken pieces of premium dark chocolate, cocoa powder dusting, moody lighting, gold foil accents, 8k. (Reference: FITAI_083)", "Professional food photography of golden liquid honey dripping from a wooden dipper into a glass jar, sunlit, warm amber tones, 8k. (Reference: FITAI_084)", "Professional food photography of a perfect scoop of vanilla and chocolate ice cream in a glass bowl, mint leaf garnish, refreshing, soft pastel lighting, 8k. (Reference: FITAI_085)", "Professional food photography of a slice of layered chocolate cake, rich fudge texture, elegant plate, cafe setting, 8k. (Reference: FITAI_086)", "Professional food photography of a transparent glass cup of hot tea (green or black), steam rising, tea leaves and herbs nearby, cozy warm atmosphere, 8k. (Reference: FITAI_087)", "Professional food photography of a cup of hot coffee with rich crema, coffee beans on a dark wooden table, steam, elegant morning lighting, 8k. (Reference: FITAI_088)", "Professional food photography of a cold glass of crystal clear mineral water, ice cubes, condensation on glass, minimalist blue background, refreshing, 8k. (Reference: FITAI_089)", "Professional food photography of a glass of vibrant fresh fruit juice (e.g., orange or pomegranate), fruit slices nearby, bright backlighting, refreshing droplets, 8k. (Reference: FITAI_090)", "Professional food photography of a cold glass of soda with ice and condensation, refreshing bubbles, bright studio lighting, commercial style, 8k. (Reference: FITAI_091)", "Professional food photography of a rustic ceramic mug of dark Kvas, frothy head, dark bread slices in background, moody warm lighting, 8k. (Reference: FITAI_092)", "Professional food photography of a thick colorful smoothie in a glass jar, straw, fresh fruit ingredients scattered around, bright healthy aesthetic, 8k. (Reference: FITAI_093)", "Professional food photography of a cold glass of Ayran, garnished with dill or mint, ceramic cup, rustic stone background, high-end feel, 8k. (Reference: FITAI_094)", "Professional food photography of a luxury wine glass with red wine or a crystal tumbler with whiskey, dramatic side lighting, dark elegant background, 8k. (Reference: FITAI_095)", "Professional food photography of an energy drink can with condensation, vibrant colored liquid in a glass with ice, dynamic lighting, 8k. (Reference: FITAI_096)", "Professional food photography of a matte black fitness shaker with a creamy protein shake, vanilla beans or chocolate pieces nearby, modern gym aesthetic, 8k. (Reference: FITAI_097)", "Professional food photography of a clean white supplement tub, white powder on a scoop, minimalist clinical aesthetic, bright high-key lighting, 8k. (Reference: FITAI_098)", "Professional food photography of vibrant green spirulina powder or clear collagen liquid in a small glass, minimalist botanical background, 8k. (Reference: FITAI_099)", "Professional food photography of a half-eaten protein bar showing texture (nuts, chocolate), fitness aesthetic, bright natural light, 8k. (Reference: FITAI_100)", "Professional food photography of a sleek glass bottle filled with clear golden oil, light passing through, minimalist kitchen background, soft morning light, 8k. (Reference: FITAI_101)", "Professional food photography of a block of fresh yellow butter on a small ceramic dish, wooden table, natural lighting, 8k. (Reference: FITAI_102)", "Professional food photography of golden liquid Ghee in a glass jar, rich texture, warm lighting, rustic wooden background, 8k. (Reference: FITAI_103)", "Professional food photography of pure white coconut oil in a jar, fresh coconut halves nearby, bright tropical lighting, 8k. (Reference: FITAI_104)", "Professional food photography of rendered golden animal fat in a glass jar, rustic kitchen aesthetic, moody lighting, 8k. (Reference: FITAI_105)", "Professional food photography of a pile of fine white sea salt in a small stone bowl, minimalist aesthetic, bright lighting, 8k. (Reference: FITAI_106)", "Professional food photography of white and brown sugar crystals spilling onto a dark surface, macro shot, artistic lighting, 8k. (Reference: FITAI_107)", "Professional food photography of a small bowl of rich red tomato sauce or adjika, fresh herbs on top, dark moody background, 8k. (Reference: FITAI_108)", "Professional food photography of a swirl of creamy white mayonnaise or béchamel sauce in a white bowl, silky texture, soft bright lighting, 8k. (Reference: FITAI_109)", "Professional food photography of dark savory soy sauce or balsamic vinegar in a small glass dish, reflections, minimalist elegant setting, 8k. (Reference: FITAI_110)", "Professional food photography of a small dish of yellow mustard and green wasabi, artistic textures, bright highlights, 8k. (Reference: FITAI_111)", "Professional food photography of a bowl of vibrant green pesto sauce with pine nuts and basil leaves, rustic vibe, 8k. (Reference: FITAI_112)", "Professional food photography of an assortment of colorful dry spices (zira, turmeric, paprika) in small wooden spoons on a dark surface, vibrant colors, artistic mess, 8k. (Reference: FITAI_113)", "Professional food photography of several bouillon cubes, wrapped and unwrapped, rustic kitchen background, 8k. (Reference: FITAI_114)", "Professional food photography of a tall gourmet burger with melting cheese, fresh lettuce, and tomato, stacked perfectly, warm lighting, wooden board, 8k. (Reference: FITAI_115)", "Professional food photography of a slice of pizza being pulled away with stretching melted cheese, vibrant toppings, rustic oven background, 8k. (Reference: FITAI_116)", "Professional food photography of a vibrant fresh salad in a large bowl, colorful vegetables, light vinaigrette dressing, bright natural light, 8k. (Reference: FITAI_117)", "Professional food photography of a traditional Uzbek hot dish (like Beshbarmoq or Jiz), served on a patterned ceramic plate, steaming, rich meat textures, 8k. (Reference: FITAI_118)", "Professional food photography of a plate of Spaghetti Bolognese with rich red sauce and basil leaf, elegant presentation, soft warm lighting, 8k. (Reference: FITAI_119)", "Professional food photography of a set of fresh sushi maki rolls on a black slate board, ginger and wasabi on the side, minimalist Japanese style, 8k. (Reference: FITAI_120)", "Professional food photography of an assortment of golden Somsa pastries on a rustic tray, different shapes, warm bakery lighting, 8k. (Reference: FITAI_121)", "Professional food photography of various canned ingredients like sweet corn and peas in small ceramic bowls, bright organized pantry aesthetic, 8k. (Reference: FITAI_122)", "Professional food photography of an assortment of gourmet nuts in small wooden bowls, textures visible, earthy tones, soft side lighting, 8k. (Reference: FITAI_123)", "Professional food photography of various edible seeds in glass jars, minimalist aesthetic, bright natural light, 8k. (Reference: FITAI_124)", "Professional photography of a small clean baby bowl with smooth cereal, soft pastel colors, bright clean nursery lighting, 8k. (Reference: FITAI_125)", "Professional photography of a small glass jar of bright orange baby puree, fresh fruit nearby, minimalist clean aesthetic, 8k. (Reference: FITAI_126)", "Professional photography of small soft baby biscuits on a colorful plate, soft natural light, clean high-end feel, 8k. (Reference: FITAI_127)"];
+        const listDiv = document.getElementById('list');
+        const searchInput = document.getElementById('search');
+        const counterDiv = document.getElementById('counter');
+
+        function render(filter = "") {
+            listDiv.innerHTML = '';
+            let count = 0;
+            prompts.forEach((p) => {
+                if (p.toLowerCase().includes(filter.toLowerCase())) {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'prompt-card';
+                    
+                    const idMatch = p.match(/FITAI_\d+/);
+                    const id = idMatch ? idMatch[0] : 'ID';
+                    
+                    card.innerHTML = `
+                        <span class="id-badge">${id}</span>
+                        <div class="prompt-text">${p}</div>
+                        <button class="copy-btn" onclick="copyText(this, \`${p.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">Копировать</button>
+                    `;
+                    listDiv.appendChild(card);
+                }
+            });
+            counterDiv.innerText = `Показано: ${count} из ${prompts.length}`;
+        }
+
+        function copyText(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const oldText = btn.innerText;
+                btn.innerText = 'Скопировано!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerText = oldText;
+                    btn.classList.remove('copied');
+                }, 1000);
+            }).catch(err => {
+                console.error('Ошибка копирования: ', err);
+                alert('Не удалось скопировать. Попробуйте вручную.');
+            });
+        }
+
+        searchInput.addEventListener('input', (e) => render(e.target.value));
+        render();
+    </script>
+</body>
+</html>

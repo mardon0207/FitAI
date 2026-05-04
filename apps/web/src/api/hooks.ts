@@ -6,6 +6,8 @@ import type {
 } from '@fit/shared-types';
 
 // ─── Foods ───────────────────────────────────────────────
+const STORAGE_URL = 'https://vuxpysphjpqpnutpfbux.supabase.co/storage/v1/object/public/foods';
+
 export function useSearchFoods(q: string, lang: string, enabled = true) {
   return useQuery({
     queryKey: ['uq_products', 'search', q, lang],
@@ -32,7 +34,7 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
         defaultUnit: food.default_unit || 'g',
         defaultQty: 100,
         isRecipe: food.per_100g.type === 'recipe',
-        photoUrl: `/foods/${food.slug}.jpeg`,
+        photoUrl: `${STORAGE_URL}/${food.slug}.jpeg`,
       })) as FoodSummary[];
     },
     enabled: enabled && q.length > 0,
@@ -73,7 +75,7 @@ export function useFood(id: string | undefined) {
               fat: food.per_100g.fat,
               ...(food.per_100g.micros || {}),
             },
-            photoUrl: `/foods/${food.slug}.jpeg`,
+            photoUrl: `${STORAGE_URL}/${food.slug}.jpeg`,
           } as FoodDetail;
       }
 
@@ -105,7 +107,7 @@ export function useFood(id: string | undefined) {
             carbs: recipe.carbs_per_100g,
             fat: recipe.fat_per_100g,
           },
-          photoUrl: `/foods/${recipe.slug}.jpeg`,
+          photoUrl: `${STORAGE_URL}/${recipe.slug}.jpeg`,
         } as FoodDetail;
       }
 
@@ -151,7 +153,7 @@ export function useFoods(slugs: string[]) {
               fat: food.per_100g.fat,
               ...(food.per_100g.micros || {}),
             },
-            photoUrl: `/foods/${food.slug}.jpeg`,
+            photoUrl: `${STORAGE_URL}/${food.slug}.jpeg`,
           } as FoodDetail);
         });
       }
@@ -178,7 +180,7 @@ export function useFoods(slugs: string[]) {
               carbs: recipe.carbs_per_100g,
               fat: recipe.fat_per_100g,
             },
-            photoUrl: `/foods/${recipe.slug}.jpeg`,
+            photoUrl: `${STORAGE_URL}/${recipe.slug}.jpeg`,
           } as FoodDetail);
         });
       }
