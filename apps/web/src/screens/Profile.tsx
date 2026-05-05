@@ -167,6 +167,17 @@ export function ProfileScreen() {
         { icon: 'scale', name: t.unit, value: t.metric },
       ],
     },
+    ...(profile.role === 'admin' ? [{
+      title: 'Admin',
+      items: [
+        { 
+          icon: 'settings' as const, 
+          name: t.manageProducts || 'Manage Products', 
+          highlight: true,
+          onClick: () => navigate('/admin') 
+        },
+      ]
+    }] : []),
   ];
 
   return (
@@ -354,7 +365,7 @@ export function ProfileScreen() {
       {/* Tweaks Modal Overlay */}
       {showTweaks && (
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 1000,
+          position: 'absolute', inset: 0, zIndex: 2000,
           background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(10px)',
           display: 'flex', alignItems: 'flex-end',
         }}>
@@ -362,7 +373,10 @@ export function ProfileScreen() {
             width: '100%', background: dark ? '#1E293B' : '#fff', 
             borderRadius: '32px 32px 0 0', padding: 24, paddingBottom: 40,
             boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'slideUp 0.3s ease-out',
+            maxHeight: '85dvh',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             <TweaksPanelContent onClose={() => setShowTweaks(false)} />
           </div>

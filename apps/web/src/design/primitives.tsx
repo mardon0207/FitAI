@@ -4,6 +4,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { FIT } from './tokens';
 import { Icon } from './Icon';
+export { Icon };
 
 // ═══════════════════════════════════════════════════════
 // Mesh Background Component for the WOW factor
@@ -498,7 +499,7 @@ const TONES: Record<Tone, { bg: string; fg: string }> = {
 
 export function FoodThumb({
   name, size = 48, emoji, tone = 'green', photo,
-}: { name?: string; size?: number; emoji?: string; tone?: Tone; photo?: string }) {
+}: { name?: string; size?: number; emoji?: string; tone?: Tone; photo?: string | null }) {
   const toneColors = TONES[tone];
   const [photoFailed, setPhotoFailed] = useState(false);
   const initials = name ? name.slice(0, 2).toUpperCase() : '··';

@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useTabNav } from '@/hooks/useTabNav';
 
 import { TweaksPanel } from '@/design/TweaksPanel';
+import { Toaster } from '@/design/Toaster';
 import { Icon } from '@/design/Icon';
 import { FIT } from '@/design/tokens';
 
@@ -52,6 +53,7 @@ const QuizScreen = lazy(() => import('@/screens/Quiz').then(m => ({ default: m.Q
 const LangScreen = lazy(() => import('@/screens/Settings').then(m => ({ default: m.LangScreen })));
 const ThemeScreen = lazy(() => import('@/screens/Settings').then(m => ({ default: m.ThemeScreen })));
 const PermsScreen = lazy(() => import('@/screens/Settings').then(m => ({ default: m.PermsScreen })));
+const AdminProductsScreen = lazy(() => import('@/screens/AdminProducts').then(m => ({ default: m.AdminProductsScreen })));
 
 export function App() {
   const navigate = useNavigate();
@@ -91,7 +93,7 @@ export function App() {
       if (session) {
         setAuth(session.access_token, session.user.id);
         pullProfile().then(() => useProfile.getState().pushToSupabase());
-        pullDiary().then(() => useDiary.getState().pushAllToSupabase());
+        pullDiary().then(() => useDiary.getState().pullFromSupabase());
       }
     });
 
@@ -99,7 +101,7 @@ export function App() {
       if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session) {
         setAuth(session.access_token, session.user.id);
         pullProfile().then(() => useProfile.getState().pushToSupabase());
-        pullDiary().then(() => useDiary.getState().pushAllToSupabase());
+        pullDiary().then(() => useDiary.getState().pullFromSupabase());
         
         if (event === 'PASSWORD_RECOVERY') {
           navigate('/reset-password');
@@ -115,6 +117,7 @@ export function App() {
   const userId = useAuth((s) => s.userId);
   const hasOnboarded = usePrefs((s) => s.hasOnboarded);
   const hasCompletedQuiz = useProfile((s) => s.hasCompletedQuiz);
+  const isAdmin = useProfile((s) => s.role === 'admin');
 
   return (
     <>
@@ -178,6 +181,9 @@ export function App() {
               <Route path="/steps-input" element={<Navigate to="/sport" replace />} />
               <Route path="/sport" element={<SportScreen />} />
 
+              {/* Admin */}
+              <Route path="/admin" element={<AdminProductsScreen onBack={() => navigate('/profile')} />} />
+              
               {/* Onboarding / Quiz can be re-accessed if needed, or redirect to home */}
               <Route path="/quiz/:step" element={<QuizScreen />} />
               
@@ -197,6 +203,7 @@ export function App() {
         </Routes>
       </Suspense>
       <TweaksPanel />
+      <Toaster />
     </>
   );
 }

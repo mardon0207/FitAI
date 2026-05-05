@@ -1,5 +1,6 @@
 import { PRIMARY_PALETTES, usePrefs, type Lang } from '@/stores/prefs';
 import { FIT } from '@/design/tokens';
+import { useProfile } from '@/stores/profile';
 
 const LANGS: Lang[] = ['uz', 'ru', 'en'];
 const THEMES = [
@@ -12,17 +13,31 @@ const COLORS = Object.keys(PRIMARY_PALETTES);
  *  This is now used as a modal or inline element in the Profile settings. */
 export function TweaksPanelContent({ onClose }: { onClose: () => void }) {
   const { lang, theme, primaryColor, setLang, setTheme, setPrimaryColor } = usePrefs();
+  const role = useProfile(s => s.role);
+  const updateProfile = useProfile(s => s.updateProfile);
+
+  const isActuallyAdmin = role === 'admin';
 
   return (
     <div style={{
-      width: '100%', background: 'transparent',
-      fontFamily: 'Inter, sans-serif',
+      width: '100%', height: '100%',
+      fontFamily: FIT.sans,
       color: '#0F172A',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexShrink: 0 }}>
         <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text }}>Tweak Panel</div>
-        <div onClick={onClose} style={{ cursor: 'pointer', color: FIT.textMuted, fontSize: 24 }}>×</div>
+        <div onClick={onClose} style={{ cursor: 'pointer', color: FIT.textMuted, fontSize: 24, padding: 4 }}>×</div>
       </div>
+
+      <div className="fit-scroll" style={{ 
+        flex: 1, 
+        overflowY: 'auto', 
+        paddingRight: 4,
+        marginRight: -4,
+        paddingBottom: 20
+      }}>
 
       <Label>Til (Language)</Label>
       <Row>
@@ -57,8 +72,46 @@ export function TweaksPanelContent({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
-      <div style={{ fontSize: 12, color: FIT.textMuted, lineHeight: 1.5, background: `${FIT.primary}10`, padding: 12, borderRadius: 12 }}>
+      <div style={{ fontSize: 12, color: FIT.textMuted, lineHeight: 1.5, background: `${FIT.primary}10`, padding: 12, borderRadius: 12, marginBottom: 20 }}>
         Bu sozlamalar butun ilova bo'ylab darhol qo'llaniladi.
+      </div>
+
+      <Label>Tizim (System)</Label>
+      <div 
+        onClick={() => {
+          const next = isActuallyAdmin ? 'user' : 'admin';
+          updateProfile({ role: next });
+        }}
+        style={{
+          width: '100%', padding: '16px', borderRadius: 16,
+          background: isActuallyAdmin ? `${FIT.cyan}15` : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${isActuallyAdmin ? FIT.cyan : 'rgba(255,255,255,0.1)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', transition: 'all 0.2s'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: isActuallyAdmin ? FIT.cyan : '#fff' }}>
+            {isActuallyAdmin ? 'Admin Mode Active' : 'Enable Admin Mode'}
+          </div>
+          <div style={{ fontSize: 11, color: FIT.textMuted }}>
+            {isActuallyAdmin ? 'You have full access to product management.' : 'Click to grant yourself admin privileges.'}
+          </div>
+        </div>
+        <div style={{ 
+          width: 48, height: 26, borderRadius: 13, 
+          background: isActuallyAdmin ? FIT.cyan : 'rgba(255,255,255,0.1)', 
+          position: 'relative',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ 
+            width: 20, height: 20, borderRadius: 10, background: '#fff', 
+            position: 'absolute', 
+            left: isActuallyAdmin ? 25 : 3, top: 3,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          }} />
+        </div>
+        </div>
       </div>
     </div>
   );

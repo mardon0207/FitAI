@@ -6,7 +6,7 @@ import type {
 } from '@fit/shared-types';
 
 // ─── Foods ───────────────────────────────────────────────
-const STORAGE_URL = 'https://vuxpysphjpqpnutpfbux.supabase.co/storage/v1/object/public/foods';
+const STORAGE_URL = import.meta.env.VITE_SUPABASE_STORAGE_URL || 'https://vuxpysphjpqpnutpfbux.supabase.co/storage/v1/object/public/foods';
 
 export function useSearchFoods(q: string, lang: string, enabled = true) {
   return useQuery({
@@ -35,7 +35,8 @@ export function useSearchFoods(q: string, lang: string, enabled = true) {
         defaultQty: 100,
         isRecipe: food.per_100g.type === 'recipe',
         photoUrl: `${STORAGE_URL}/${food.slug}.jpeg`,
-      })) as FoodSummary[];
+        rawData: food,
+      })) as (FoodSummary & { rawData: any })[];
     },
     enabled: enabled && q.length > 0,
     staleTime: 60_000,

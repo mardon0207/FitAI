@@ -104,4 +104,5 @@ export interface Profile {
   targetCarbs: number;
   targetFat: number;
   photoUrl?: string | null;
+  role?: 'user' | 'admin';
 }

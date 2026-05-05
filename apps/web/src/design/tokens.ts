@@ -263,6 +263,16 @@ export interface I18NStrings {
   items: string;
   microNutrients: string;
   aiAdvisor: string;
+  manageProducts: string;
+  addProduct: string;
+  editProduct: string;
+  saveProduct: string;
+  deleteProduct: string;
+  productName: string;
+  productKcal: string;
+  productProtein: string;
+  productCarbs: string;
+  productFat: string;
 }
 
 
@@ -482,6 +492,16 @@ export const I18N: Record<Lang, I18NStrings> = {
     items: 'ta',
     microNutrients: 'Mikroelementlar',
     aiAdvisor: 'AI Tavsiyasi',
+    manageProducts: 'Mahsulotlarni boshqarish',
+    addProduct: 'Yangi mahsulot',
+    editProduct: 'Tahrirlash',
+    saveProduct: 'Saqlash',
+    deleteProduct: "O'chirish",
+    productName: 'Nomi',
+    productKcal: 'Kkal',
+    productProtein: 'Oqsil',
+    productCarbs: 'Uglevod',
+    productFat: "Yog'",
   },
   ru: {
     hello: 'Доброе утро',
@@ -698,6 +718,16 @@ export const I18N: Record<Lang, I18NStrings> = {
     items: 'шт',
     microNutrients: 'Микроэлементы',
     aiAdvisor: 'AI Рекомендация',
+    manageProducts: 'Управление продуктами',
+    addProduct: 'Новый продукт',
+    editProduct: 'Изменить',
+    saveProduct: 'Сохранить',
+    deleteProduct: 'Удалить',
+    productName: 'Название',
+    productKcal: 'Ккал',
+    productProtein: 'Белки',
+    productCarbs: 'Углеводы',
+    productFat: 'Жиры',
   },
   en: {
     hello: 'Good morning',
@@ -914,5 +944,15 @@ export const I18N: Record<Lang, I18NStrings> = {
     items: 'pcs',
     microNutrients: 'Micronutrients',
     aiAdvisor: 'AI Advice',
+    manageProducts: 'Manage Products',
+    addProduct: 'New Product',
+    editProduct: 'Edit Product',
+    saveProduct: 'Save Product',
+    deleteProduct: 'Delete Product',
+    productName: 'Name',
+    productKcal: 'Kcal',
+    productProtein: 'Protein',
+    productCarbs: 'Carbs',
+    productFat: 'Fat',
   },
 };

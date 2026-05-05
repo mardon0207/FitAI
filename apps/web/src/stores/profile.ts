@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { Profile, Goal, ActivityLevel, Gender } from '@fit/shared-types';
 
 interface ProfileState extends Profile {
+  role?: 'user' | 'admin';
   hasCompletedQuiz: boolean;
   updateProfile: (p: Partial<ProfileState>) => void;
   pullFromSupabase: () => Promise<void>;
@@ -29,6 +30,7 @@ export const useProfile = create<ProfileState>()(
       targetCarbs: 200,
       targetFat: 65,
       photoUrl: null,
+      role: 'user',
 
       updateProfile: (p) => {
         set((state) => {
@@ -67,6 +69,7 @@ export const useProfile = create<ProfileState>()(
             goal: (data.goal as any) || get().goal,
             activityLevel: (data.activity_level as any) || get().activityLevel,
             photoUrl: data.photo_url || get().photoUrl,
+            role: data.role || 'user',
             hasCompletedQuiz: true,
           });
         }
@@ -87,6 +90,7 @@ export const useProfile = create<ProfileState>()(
           goal: s.goal,
           activity_level: s.activityLevel,
           photo_url: s.photoUrl,
+          role: s.role,
           updated_at: new Date().toISOString(),
         });
       },
@@ -108,6 +112,7 @@ export const useProfile = create<ProfileState>()(
           targetCarbs: 200,
           targetFat: 65,
           photoUrl: null,
+          role: 'user',
         });
       },
     }),
