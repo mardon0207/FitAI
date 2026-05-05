@@ -103,4 +103,5 @@ export interface Profile {
   targetProtein: number;
   targetCarbs: number;
   targetFat: number;
+  photoUrl?: string | null;
 }

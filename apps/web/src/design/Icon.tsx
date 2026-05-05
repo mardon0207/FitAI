@@ -7,7 +7,7 @@ export type IconName =
   | 'eye' | 'barcode' | 'apple' | 'google' | 'settings' | 'leaf'
   | 'alert' | 'sparkle' | 'trophy' | 'calendar' | 'fire' | 'star'
   | 'scale' | 'filter' | 'globe' | 'moon' | 'sun' | 'flash' | 'grid'
-  | 'chat' | 'qr';
+  | 'chat' | 'qr' | 'robot' | 'steps';
 
 const PATHS: Record<IconName, string> = {
   home: 'M3 12L12 3l9 9M5 10v10h5v-6h4v6h5V10',
@@ -51,6 +51,8 @@ const PATHS: Record<IconName, string> = {
   grid: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',
   chat: 'M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z',
   qr: 'M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15v3h3v3h3v-3h-3v-3M12 3v6M3 12h6M21 12h-3',
+  robot: 'M12 8V4m0 0H8m4 0h4M7 13v-3a5 5 0 0110 0v3M5 20v-4a3 3 0 013-3h8a3 3 0 013 3v4M9 16h.01M15 16h.01',
+  steps: 'M13 4v4l3 1-1 3 3 1-2 5h-4l1-4-3-1 1-4-3-1M10 20h4',
 };
 
 export interface IconProps {
@@ -58,9 +60,10 @@ export interface IconProps {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  style?: React.CSSProperties;
 }
 
-export function Icon({ name, size = 24, color = 'currentColor', strokeWidth = 1.5 }: IconProps) {
+export function Icon({ name, size = 24, color = 'currentColor', strokeWidth = 1.5, style }: IconProps) {
   const d = PATHS[name];
   return (
     <svg
@@ -73,6 +76,7 @@ export function Icon({ name, size = 24, color = 'currentColor', strokeWidth = 1.
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      style={style}
     >
       <path d={d} />
     </svg>

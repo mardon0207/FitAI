@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Phone, TopBar, TabBar, Card } from '@/design/primitives';
+import { motion, type Variants } from 'framer-motion';
+import { Phone, TabBar, Card, Stat } from '@/design/primitives';
 import { Icon } from '@/design/Icon';
-import { FIT } from '@/design/tokens';
+import { FIT, type I18NStrings } from '@/design/tokens';
 import { usePrefs, useT } from '@/stores/prefs';
 import { useTabNav } from '@/hooks/useTabNav';
 import { useDiary } from '@/stores/diary';
@@ -9,11 +10,16 @@ import { useProfile } from '@/stores/profile';
 import { ymd, todayYmd } from '@/data/date';
 
 const PERIOD_KEYS = ['week', 'month', 'year'] as const;
-const ACTIVITY_COLORS = [FIT.accent, FIT.primary, FIT.protein, FIT.fat, FIT.carbs];
+const ACTIVITY_COLORS = [FIT.cyan, FIT.lime, FIT.neonPink, FIT.purple, FIT.orange];
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 export function StatsScreen() {
   const t = useT();
-  const dark = usePrefs((s) => s.theme === 'dark');
+  const dark = true; // Premium is dark
   const lang = usePrefs((s) => s.lang);
   const onTab = useTabNav();
   const [period, setPeriod] = useState<(typeof PERIOD_KEYS)[number]>('week');
@@ -24,10 +30,9 @@ export function StatsScreen() {
   const weightRecords = useDiary(s => s.weight) || [];
   const waterRecords = useDiary(s => s.water) || [];
 
-  const daysCount = period === 'week' ? 7 : period === 'month' ? 30 : 12; // 12 months for Year
+  const daysCount = period === 'week' ? 7 : period === 'month' ? 30 : 12;
   const today = new Date();
 
-  // Data generation for the selected period
   const dataPoints = useMemo(() => {
     if (period === 'year') {
       return Array.from({ length: 12 }).map((_, i) => {
@@ -57,7 +62,7 @@ export function StatsScreen() {
       ? entries.filter(e => e.date.startsWith(p.dateKey))
       : entries.filter(e => e.date === p.dateKey);
     const kcal = dayEntries.reduce((sum, e) => sum + e.kcal, 0);
-    return p.isMonth ? Math.round(kcal / 30) : kcal; // Avg daily for month in Year view
+    return p.isMonth ? Math.round(kcal / 30) : kcal;
   }), [entries, dataPoints]);
 
   const burnedData = useMemo(() => dataPoints.map(p => {
@@ -69,407 +74,220 @@ export function StatsScreen() {
   }), [activities, dataPoints]);
 
   const weightData = useMemo(() => dataPoints.map(p => {
-    // For weight, we take the last record of that period
     const records = p.isMonth
       ? weightRecords.filter(r => r.date.startsWith(p.dateKey))
       : weightRecords.filter(r => r.date === p.dateKey);
-    
     const last = records[records.length - 1];
     if (last) return last.kg;
-    
-    // If no record for this day/month, find the closest previous one
     const prevRecords = weightRecords.filter(r => r.date <= p.dateKey).sort((a, b) => b.date.localeCompare(a.date));
     return prevRecords[0]?.kg || null;
   }), [weightRecords, dataPoints]);
-
-  const waterData = useMemo(() => dataPoints.map(p => {
-    const records = p.isMonth
-      ? waterRecords.filter(r => r.date.startsWith(p.dateKey))
-      : waterRecords.filter(r => r.date === p.dateKey);
-    const ml = records.reduce((sum, r) => sum + r.ml, 0);
-    return p.isMonth ? ml / 1000 : ml; // Liters for year, ml for week/month
-  }), [waterRecords, dataPoints]);
 
   const avgKcal = Math.round(caloriesData.reduce((a, b) => a + b, 0) / dataPoints.length);
   const avgBurned = Math.round(burnedData.reduce((a, b) => a + b, 0) / dataPoints.length);
   const currentWeight = weightRecords[weightRecords.length - 1]?.kg ?? '—';
 
-  const weightTrend = useMemo(() => {
-    const valid = weightRecords.filter(r => r && r.kg).sort((a, b) => a.addedAt - b.addedAt);
-    if (valid.length < 2) return null;
-    const last = valid[valid.length - 1];
-    const prev = valid[valid.length - 2];
-    if (!last || !prev) return null;
-    return last.kg - prev.kg;
-  }, [weightRecords]);
-
-  const weightChangeStr = useMemo(() => {
-    const first = weightRecords[0];
-    const last = weightRecords[weightRecords.length - 1];
-    if (weightRecords.length > 1 && first && last) {
-      return `${t.change}: ${(last.kg - first.kg).toFixed(1)} kg`;
-    }
-    return t.noData;
-  }, [weightRecords, t.stats]);
-
-  const kcalTrend = avgKcal - targetKcal;
-
-  // Stats Card data
   const statsCards = [
-    { 
-      icon: '🍎', 
-      label: t.intake, 
-      value: avgKcal, 
-      unit: t.kcal, 
-      color: FIT.primary,
-      trend: kcalTrend,
-      trendUnit: t.kcal
-    },
-    { 
-      icon: '🔥', 
-      label: t.burned, 
-      value: avgBurned, 
-      unit: t.kcal, 
-      color: FIT.accent 
-    },
-    { 
-      icon: '⚖️', 
-      label: t.weight, 
-      value: currentWeight, 
-      unit: 'kg', 
-      color: FIT.protein,
-      trend: weightTrend,
-      trendUnit: 'kg'
-    },
-    { 
-      icon: '💧', 
-      label: t.water, 
-      value: (waterData.reduce((a, b) => a + b, 0) / (dataPoints.length || 1)).toFixed(1), 
-      unit: period === 'year' ? 'L' : t.ml, 
-      color: '#3B82F6' 
-    },
+    { icon: '🍎', label: t.intake, value: avgKcal, unit: t.kcal, color: FIT.cyan },
+    { icon: '🔥', label: t.burned, value: avgBurned, unit: t.kcal, color: FIT.lime },
+    { icon: '⚖️', label: t.weight, value: currentWeight, unit: 'kg', color: FIT.neonPink },
+    { icon: '💧', label: t.water, value: Math.round(waterRecords.reduce((s, r) => s + r.ml, 0) / 7), unit: 'ml', color: FIT.cyan },
   ];
 
   return (
-    <Phone dark={dark}>
-      <TopBar title={t.stats} transparent right={<Icon name="filter" size={20} color={FIT.text} />} />
-
-      <div style={{ padding: '0 20px 16px' }}>
-        <div style={{ 
-          display: 'flex', background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', 
-          borderRadius: 14, padding: 4
-        }}>
-          {PERIOD_KEYS.map((p) => {
-            const active = p === period;
-            return (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                style={{
-                  flex: 1, padding: '8px 0', borderRadius: 10, border: 'none',
-                  background: active ? (dark ? '#334155' : '#fff') : 'transparent',
-                  color: active ? FIT.text : FIT.textMuted,
-                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: active ? FIT.shadowSm : 'none'
-                }}
-              >
-                {t[p]}
-              </button>
-            );
-          })}
+    <Phone dark showStatus mesh stagger>
+      <div style={{ padding: '8px 24px 20px' }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -1, marginBottom: 24 }}>{t.stats}</div>
+        
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)' }}>
+          {PERIOD_KEYS.map((p) => (
+            <motion.button
+              key={p}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setPeriod(p)}
+              className={p === period ? "neon-glow-cyan" : ""}
+              style={{
+                flex: 1, padding: '12px 0', borderRadius: 14, border: 'none',
+                background: p === period ? FIT.cyan : 'transparent',
+                color: p === period ? '#000' : '#64748B',
+                fontSize: 13, fontWeight: 900, cursor: 'pointer',
+                textTransform: 'uppercase', letterSpacing: 1,
+                transition: 'all 0.25s'
+              }}
+            >
+              {t[p]}
+            </motion.button>
+          ))}
         </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 100px' }}>
-        {/* KPI Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-          {statsCards.map(c => <StatCard key={c.label} {...c} />)}
-        </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 120px' }}>
+        <div data-fit-stagger>
+          {/* KPI Grid */}
+          <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            {statsCards.map((c, i) => (
+              <Card key={i} variant="glass" pad={16}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <span style={{ fontSize: 18 }}>{c.icon}</span>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: 1 }}>{c.label}</span>
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', fontFamily: FIT.mono }}>
+                  {c.value}<span style={{ fontSize: 11, color: '#64748B', marginLeft: 4 }}>{c.unit}</span>
+                </div>
+              </Card>
+            ))}
+          </motion.div>
 
-        {/* Calories Trend Chart (Consumed vs Burned) */}
-        <ChartCard 
-          title={t.kcalBalance} 
-          subtitle={`${t.goal}: ${targetKcal} ${t.kcal}/${t.days}`}
-          data={caloriesData}
-          secondaryData={burnedData}
-          labels={dataPoints.map(p => p.label)}
-          max={Math.max(...caloriesData, ...burnedData, targetKcal) * 1.2}
-          target={targetKcal}
-          dark={dark}
-        />
+          {/* Calories Chart */}
+          <motion.div variants={itemVariants} style={{ marginBottom: 24 }}>
+            <Card variant="glass" pad={20}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{t.kcalBalance}</div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>{t.goal}: {targetKcal} kcal</div>
+                </div>
+                <Icon name="stats" size={24} color={FIT.cyan} />
+              </div>
 
-        {/* Weight Progress Chart */}
-        <ChartCard 
-          title={t.weightTrend} 
-          subtitle={weightChangeStr}
-          data={weightData.filter((v): v is number => v !== null)}
-          color={FIT.protein}
-          labels={dataPoints.filter((_, i) => weightData[i] !== null).map(p => p.label)}
-          max={Math.max(...weightData.filter((v): v is number => v !== null), 100) + 5}
-          min={Math.min(...weightData.filter((v): v is number => v !== null), 50) - 5}
-          dark={dark}
-          showArea={false}
-        />
+              {/* Chart Legend */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16, paddingLeft: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 12, height: 3, borderRadius: 1.5, background: FIT.cyan }} />
+                  <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>{t.intake}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 12, height: 1, borderTop: `1px dashed ${FIT.neonPink}`, opacity: 0.8 }} />
+                  <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>{t.goal}</span>
+                </div>
+              </div>
 
-        {/* Activity Mix Breakdown */}
-        <Card pad={0} style={{ marginBottom: 24 }}>
-           <div style={{ padding: 20 }}>
-             <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text, marginBottom: 16 }}>{t.activities}</div>
-             <ActivityMix activities={activities} t={t} dark={dark} />
-           </div>
-        </Card>
+              <PremiumChart 
+                data={caloriesData} 
+                labels={dataPoints.map(p => p.label as string)} 
+                color={FIT.cyan} 
+                target={targetKcal}
+              />
+            </Card>
+          </motion.div>
 
-      {/* Daily History List (Only for Week view) */}
-      {period === 'week' && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Icon name="calendar" size={20} color={FIT.primary} />
-            {t.dailyHistory}
-          </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[...dataPoints].reverse().map((d, i) => {
-                const kcalIn = caloriesData[dataPoints.length - 1 - i] || 0;
-                const kcalOut = burnedData[dataPoints.length - 1 - i] || 0;
-                const weight = weightData[dataPoints.length - 1 - i];
-                const isToday = d.dateKey === todayYmd();
+          {/* Activity Mix */}
+          <motion.div variants={itemVariants} style={{ marginBottom: 24 }}>
+             <Card variant="glass" pad={20}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 24 }}>{t.activities}</div>
+                <ActivityDonut activities={activities} t={t} />
+             </Card>
+          </motion.div>
 
+          {/* Daily History */}
+          <motion.div variants={itemVariants}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 16, paddingLeft: 4 }}>{t.dailyHistory}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {dataPoints.slice(-5).reverse().map((d: any, i: number) => {
+                const kcal = caloriesData[dataPoints.length - 1 - i] || 0;
                 return (
-                  <Card key={d.dateKey} pad={14} style={{ 
-                    border: isToday ? `1px solid ${FIT.primary}44` : 'none',
-                    background: isToday ? (dark ? 'rgba(16,185,129,0.05)' : '#F0FDF4') : (dark ? 'rgba(255,255,255,0.02)' : '#fff')
-                  }}>
+                  <Card key={i} variant="glass" pad={16}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: isToday ? FIT.primary : FIT.text }}>
-                          {isToday ? t.today : d.label}
-                          <span style={{ fontSize: 10, color: FIT.textMuted, fontWeight: 600, marginLeft: 8 }}>{d.dateKey.split('-').slice(1).reverse().join('.')}</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
-                            <span style={{ color: FIT.primary }}>↓</span> {kcalIn} {t.kcal}
-                          </div>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
-                            <span style={{ color: FIT.accent }}>↑</span> {kcalOut} {t.kcal}
-                          </div>
-                          {weight && (
-                            <div style={{ fontSize: 11, fontWeight: 700, color: FIT.textMuted }}>
-                              <span style={{ color: FIT.protein }}>⚖️</span> {weight} kg
-                            </div>
-                          )}
-                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{d.label}</div>
+                        <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>{d.dateKey}</div>
                       </div>
-                      <div style={{ 
-                        width: 32, height: 32, borderRadius: 10, 
-                        background: kcalIn <= targetKcal ? (dark ? '#064E3B' : '#DCFCE7') : (dark ? '#7F1D1D' : '#FEE2E2'),
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <Icon 
-                          name={kcalIn <= targetKcal ? 'check' : 'alert'} 
-                          size={18} 
-                          color={kcalIn <= targetKcal ? '#10B981' : '#EF4444'} 
-                        />
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: kcal > targetKcal ? FIT.neonPink : FIT.cyan, fontFamily: FIT.mono }}>
+                          {kcal} <span style={{ fontSize: 10 }}>KCAL</span>
+                        </div>
                       </div>
                     </div>
                   </Card>
                 );
               })}
             </div>
-          </div>
-        )}
+          </motion.div>
+        </div>
       </div>
 
-      <TabBar
-        active="stats" onTab={onTab}
-        labels={{ home: t.home, diary: t.diary, stats: t.stats, profile: t.profile }}
-        dark={dark}
-      />
+      <TabBar active="stats" onTab={onTab} labels={{ home: t.home, diary: t.diary, stats: t.stats, profile: t.profile }} dark />
     </Phone>
   );
 }
 
-function StatCard({ icon, label, value, unit, color, trend, trendUnit }: any) {
-  const isNegative = trend < 0;
-  const absTrend = trend ? Math.abs(trend).toFixed(1) : null;
-  
-  return (
-    <Card pad={16} style={{ border: 'none', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase' }}>{label}</span>
-          <span style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 600 }}>{useT().average}</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-        <span style={{ fontSize: 24, fontWeight: 900, color: color, fontFamily: FIT.mono }}>{value}</span>
-        <span style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{unit}</span>
-      </div>
-      {trend !== undefined && trend !== null && (
-        <div style={{ 
-          marginTop: 8, 
-          fontSize: 10, 
-          fontWeight: 800, 
-          color: (label === 'Vazn' ? (isNegative ? '#10B981' : '#EF4444') : (isNegative ? '#EF4444' : '#10B981')),
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2
-        }}>
-          {isNegative ? '↓' : '↑'} {absTrend}{trendUnit}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-function ChartCard({ title, subtitle, data, secondaryData, labels, max, min = 0, target, color = FIT.primary, dark, showArea = true }: any) {
-  const height = 160;
+function PremiumChart({ data, labels, color, target }: { data: number[]; labels: string[]; color: string; target: number }) {
+  const max = Math.max(...data, target, 1000) * 1.2;
+  const height = 120;
   const width = 300;
-  const range = max - min;
-  
-  const getX = (i: number) => (i / (data.length - 1)) * width;
-  const getY = (v: number) => height - ((v - min) / range) * height;
-
-  const points = data.map((v: number, i: number) => `${getX(i)},${getY(v)}`).join(' ');
-  const secondaryPoints = secondaryData?.map((v: number, i: number) => `${getX(i)},${getY(v)}`).join(' ');
+  const points = data.map((v, i) => `${(i / (data.length - 1)) * width},${height - (v / max) * height}`).join(' ');
+  const targetY = height - (target / max) * height;
 
   return (
-    <Card pad={20} style={{ marginBottom: 16 }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: FIT.text }}>{title}</div>
-        <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 600 }}>{subtitle}</div>
-      </div>
-      
-      <div style={{ height, position: 'relative' }}>
-        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-          {/* Target Line */}
-          {target && (
-            <line x1="0" y1={getY(target)} x2={width} y2={getY(target)} stroke={dark ? '#334155' : '#E2E8F0'} strokeDasharray="4 4" />
-          )}
+    <div style={{ width: '100%' }}>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-          {/* Main Area */}
-          {showArea && (
-            <path d={`M 0,${height} L ${points} L ${width},${height} Z`} fill={`url(#grad-${title})`} opacity="0.3" />
-          )}
-          <defs>
-            <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-          </defs>
+        {/* Target Line (Neon Pink Laser) */}
+        <line 
+          x1="0" y1={targetY} x2={width} y2={targetY} 
+          stroke={FIT.neonPink} 
+          strokeWidth="1.5" 
+          strokeDasharray="4 4" 
+          opacity="0.4"
+        />
 
-          {/* Secondary Line (Burned) */}
-          {secondaryData && (
-            <path d={`M ${secondaryPoints}`} fill="none" stroke={FIT.accent} strokeWidth="2" strokeLinecap="round" strokeDasharray="4 4" />
-          )}
-
-          {/* Main Line */}
-          <path d={`M ${points}`} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          
-          {/* Points */}
-          {data.length < 15 && data.map((v: number, i: number) => (
-            <circle key={i} cx={getX(i)} cy={getY(v)} r="4" fill={color} stroke={dark ? '#1e293b' : '#fff'} strokeWidth="2" />
-          ))}
-        </svg>
-      </div>
+        <path d={`M 0,${height} L ${points} L ${width},${height} Z`} fill="url(#chartGrad)" />
+        <motion.path
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.5 }}
+          d={`M ${points}`}
+          fill="none"
+          stroke={color}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 8px ${color})` }}
+        />
+      </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
-         {labels.filter((_:any, i:number) => labels.length < 15 || i % 3 === 0).map((l: string, i: number) => (
-           <span key={i} style={{ fontSize: 9, color: FIT.textMuted, fontWeight: 700, textAlign: 'center' }}>{l}</span>
-         ))}
+        {labels.filter((_, i) => labels.length < 8 || i % 2 === 0).map((l, i) => (
+          <span key={i} style={{ fontSize: 9, color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>{l}</span>
+        ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
-function ActivityMix({ activities, t, dark }: any) {
+function ActivityDonut({ activities, t }: { activities: any[]; t: any }) {
   const mix = useMemo(() => {
-    const counts: Record<string, { kcal: number, label: string, emoji: string }> = {};
-    activities.forEach((a: any) => {
-      const type = a.type || 'unknown';
-      if (!counts[type]) counts[type] = { kcal: 0, label: a.label || t.other, emoji: '🏃' };
-      counts[type].kcal += (a.kcalBurned || 0);
+    const counts: Record<string, number> = {};
+    activities.forEach(a => {
+      const label = a.label || t.other;
+      counts[label] = (counts[label] || 0) + (a.kcalBurned || 0);
     });
-    // Sort by kcal and take top 5
-    return Object.entries(counts).sort((a, b) => b[1].kcal - a[1].kcal).slice(0, 5);
-  }, [activities]);
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  }, [activities, t]);
 
-  if (mix.length === 0) return <div style={{ fontSize: 13, color: FIT.textMuted }}>{t.noData}</div>;
-
-  const total = mix.reduce((s: number, m: any) => s + m[1].kcal, 0);
-
-  // SVG Donut calculation
-  const size = 110;
-  const center = size / 2;
-  const radius = 40;
-  const strokeWidth = 14;
-  const circumference = 2 * Math.PI * radius;
-
-  let currentOffset = 0;
+  if (mix.length === 0) return <div style={{ fontSize: 14, color: '#64748B' }}>{t.noData}</div>;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-      {/* Donut Chart */}
-      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Background circle for "empty" state */}
-          <circle 
-            cx={center} cy={center} r={radius} 
-            fill="none" stroke={dark ? '#1E293B' : '#F1F5F9'} 
-            strokeWidth={strokeWidth} 
-          />
-          {mix.map(([id, data], i) => {
-            const pct = data.kcal / total;
-            const sliceLength = pct * circumference;
-            const strokeDasharray = `${sliceLength} ${circumference}`;
-            const strokeDashoffset = -currentOffset;
-            currentOffset += sliceLength;
-            
-            return (
-              <circle
-                key={id}
-                cx={center}
-                cy={center}
-                r={radius}
-                fill="none"
-                stroke={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDasharray}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap={pct > 0.99 ? 'butt' : 'round'}
-                transform={`rotate(-90 ${center} ${center})`}
-                style={{ transition: 'all 0.5s ease' }}
-              />
-            );
-          })}
-        </svg>
-        <div style={{ 
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column'
-        }}>
-          <span style={{ fontSize: 16, fontWeight: 900, color: FIT.text, lineHeight: 1 }}>{total}</span>
-          <span style={{ fontSize: 9, fontWeight: 800, color: FIT.textMuted, textTransform: 'uppercase', marginTop: 2 }}>{t.kcal}</span>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {mix.map(([id, data], i) => {
-          const pct = Math.round((data.kcal / total) * 100);
-          return (
-            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ 
-                width: 10, height: 10, borderRadius: 3, 
-                background: ACTIVITY_COLORS[i % ACTIVITY_COLORS.length] 
-              }} />
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700 }}>
-                <span style={{ color: FIT.text }}>{data.label}</span>
-                <span style={{ color: FIT.textMuted }}>{pct}%</span>
-              </div>
+       <div style={{ width: 100, height: 100, borderRadius: 50, border: '8px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>{mix.length}</div>
+            <div style={{ fontSize: 8, color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Types</div>
+          </div>
+       </div>
+       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {mix.map(([label, kcal], i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+               <div style={{ width: 10, height: 10, borderRadius: 3, background: ACTIVITY_COLORS[i % ACTIVITY_COLORS.length] }} />
+               <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#CBD5E1' }}>{label}</div>
+               <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontFamily: FIT.mono }}>{kcal}</div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+       </div>
     </div>
   );
 }

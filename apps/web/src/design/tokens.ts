@@ -16,6 +16,14 @@ export const FIT = {
   carbs: 'var(--fit-carbs)',
   fat: 'var(--fit-fat)',
 
+  // Neon Palette - Updated to match design image
+  cyan: '#00f2ff',
+  neonPink: '#ff00f2',
+  lime: '#d4ff00',
+  orange: '#ff4d00',
+  purple: '#7c3aed',
+  blue: '#00aaff',
+
   bg: 'var(--fit-bg)',
   surface: 'var(--fit-surface)',
   surfaceAlt: 'var(--fit-surface-alt)',
@@ -53,6 +61,10 @@ export interface I18NStrings {
   dinner: string;
   snack: string;
   addFood: string;
+  left: string;
+  proteinShort: string;
+  carbsShort: string;
+  fatShort: string;
   search: string;
   diary: string;
   stats: string;
@@ -248,8 +260,11 @@ export interface I18NStrings {
   metric: string;
   appleHealth: string;
   appleWatch: string;
+  items: string;
   microNutrients: string;
+  aiAdvisor: string;
 }
+
 
 export const I18N: Record<Lang, I18NStrings> = {
   uz: {
@@ -265,6 +280,10 @@ export const I18N: Record<Lang, I18NStrings> = {
     dinner: 'Kechki ovqat',
     snack: 'Gazak',
     addFood: "Ovqat qo'shish",
+    left: 'qoldi',
+    proteinShort: 'OQS',
+    carbsShort: 'UGL',
+    fatShort: 'YOG',
     search: 'Qidirish',
     diary: 'Kundalik',
     stats: 'Statistika',
@@ -460,7 +479,9 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Metrik',
     appleHealth: 'Apple Salomatlik',
     appleWatch: 'Apple Watch',
+    items: 'ta',
     microNutrients: 'Mikroelementlar',
+    aiAdvisor: 'AI Tavsiyasi',
   },
   ru: {
     hello: 'Доброе утро',
@@ -475,6 +496,10 @@ export const I18N: Record<Lang, I18NStrings> = {
     dinner: 'Ужин',
     snack: 'Перекус',
     addFood: 'Добавить еду',
+    left: 'осталось',
+    proteinShort: 'БЕЛ',
+    carbsShort: 'УГЛ',
+    fatShort: 'ЖИР',
     search: 'Поиск',
     diary: 'Дневник',
     stats: 'Статистика',
@@ -670,7 +695,9 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Метрическая',
     appleHealth: 'Apple Здоровье',
     appleWatch: 'Apple Watch',
+    items: 'шт',
     microNutrients: 'Микроэлементы',
+    aiAdvisor: 'AI Рекомендация',
   },
   en: {
     hello: 'Good morning',
@@ -685,6 +712,10 @@ export const I18N: Record<Lang, I18NStrings> = {
     dinner: 'Dinner',
     snack: 'Snack',
     addFood: 'Add food',
+    left: 'left',
+    proteinShort: 'PRO',
+    carbsShort: 'CAR',
+    fatShort: 'FAT',
     search: 'Search',
     diary: 'Diary',
     stats: 'Stats',
@@ -880,6 +911,8 @@ export const I18N: Record<Lang, I18NStrings> = {
     metric: 'Metric',
     appleHealth: 'Apple Health',
     appleWatch: 'Apple Watch',
-    microNutrients: 'Micro-nutrients',
+    items: 'pcs',
+    microNutrients: 'Micronutrients',
+    aiAdvisor: 'AI Advice',
   },
 };

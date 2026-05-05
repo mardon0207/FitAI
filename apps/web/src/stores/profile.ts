@@ -28,6 +28,7 @@ export const useProfile = create<ProfileState>()(
       targetProtein: 150,
       targetCarbs: 200,
       targetFat: 65,
+      photoUrl: null,
 
       updateProfile: (p) => {
         set((state) => {
@@ -65,6 +66,7 @@ export const useProfile = create<ProfileState>()(
             weight: Number(data.weight) || get().weight,
             goal: (data.goal as any) || get().goal,
             activityLevel: (data.activity_level as any) || get().activityLevel,
+            photoUrl: data.photo_url || get().photoUrl,
             hasCompletedQuiz: true,
           });
         }
@@ -84,6 +86,7 @@ export const useProfile = create<ProfileState>()(
           weight: s.weight,
           goal: s.goal,
           activity_level: s.activityLevel,
+          photo_url: s.photoUrl,
           updated_at: new Date().toISOString(),
         });
       },
@@ -104,6 +107,7 @@ export const useProfile = create<ProfileState>()(
           targetProtein: 150,
           targetCarbs: 200,
           targetFat: 65,
+          photoUrl: null,
         });
       },
     }),

@@ -170,175 +170,186 @@ export function ProfileScreen() {
   ];
 
   return (
-    <Phone dark={dark}>
+    <Phone dark showStatus mesh>
       <TopBar 
         title={t.profile} transparent 
         right={
           <button 
             onClick={() => setShowTweaks(true)}
             style={{
-              width: 42, height: 42, borderRadius: 12,
-              background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+              width: 44, height: 44, borderRadius: 14,
+              background: 'rgba(255,255,255,0.05)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: 'none', cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+              border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+              color: '#fff',
             }}
           >
-            <Icon name="settings" size={22} color={FIT.text} />
+            <Icon name="settings" size={22} />
           </button>
         } 
       />
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 100px' }}>
-        <Card pad={20} style={{ margin: '16px 0 24px', background: 'transparent', border: 'none' }}>
-           <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-             <div style={{ position: 'relative' }}>
-               <div style={{
-                 width: 84, height: 84, borderRadius: 32,
-                 background: `linear-gradient(135deg, ${FIT.primary}, ${FIT.primaryDark})`,
-                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                 color: '#fff', fontSize: 28, fontWeight: 900,
-                 boxShadow: `0 10px 25px ${FIT.primary}44`,
-               }}>
-                 {(profile.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-               </div>
-               <button onClick={handleEditProfile} style={{
-                 position: 'absolute', bottom: -4, right: -4,
-                 width: 28, height: 28, borderRadius: 10, background: '#fff',
-                 border: `1px solid ${FIT.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                 cursor: 'pointer', boxShadow: FIT.shadowSm
-               }}>
-                  <Icon name="edit" size={14} color={FIT.primary} />
-               </button>
-             </div>
-             <div style={{ flex: 1 }}>
-               <div style={{ fontSize: 22, fontWeight: 900, color: FIT.text, letterSpacing: -0.5 }}>
-                 {profile.name || t.name}
-               </div>
-               <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600, marginTop: 2 }}>
-                 {profile.email || '...'}
-               </div>
-               <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                   <span style={{ fontSize: 14 }}>🔥</span>
-                   <span style={{ fontSize: 13, fontWeight: 800, color: FIT.text }}>{streak} {t.days}</span>
-                 </div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                   <span style={{ fontSize: 14 }}>🍽️</span>
-                   <span style={{ fontSize: 13, fontWeight: 800, color: FIT.text }}>{totalMeals.toLocaleString()} {t.meals}</span>
-                 </div>
-               </div>
-             </div>
-           </div>
-        </Card>
-
-        <Card pad={20} style={{ 
-          background: dark ? 'rgba(255,255,255,0.03)' : 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)', 
-          border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#E2E8F0'}`,
-          marginBottom: 24,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
-        }}>
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-             <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{t.goalWeight}</div>
-             <Icon name="trophy" size={16} color={FIT.primary} />
-           </div>
-           <div style={{ fontSize: 18, fontWeight: 900, color: FIT.text }}>
-             {profile.goal === 'lose' ? t.goal_lose : profile.goal === 'gain' ? t.goal_gain : t.goal_maintain}
-           </div>
-           
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12 }}>
-              <div style={{ fontSize: 13, color: FIT.textMuted, fontWeight: 600 }}>
-                {profile.weight}kg → {profile.goal === 'lose' ? profile.weight - 5 : profile.goal === 'gain' ? profile.weight + 5 : profile.weight}kg
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px 120px', position: 'relative' }}>
+        <div data-fit-stagger>
+          <Card variant="glass" pad={20} style={{ margin: '16px 0 24px', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <div style={{
+                  width: 84, height: 84, borderRadius: 28,
+                  background: profile.photoUrl ? 'rgba(255,255,255,0.05)' : FIT.cyan,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: profile.photoUrl ? 'inherit' : '#000', fontSize: 28, fontWeight: 900,
+                  boxShadow: `0 10px 30px ${FIT.cyan}33`,
+                  overflow: 'hidden'
+                }}>
+                  {profile.photoUrl ? (
+                    <img 
+                      src={profile.photoUrl} 
+                      alt="Profile" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    (profile.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                  )}
+                </div>
+                <button onClick={handleEditProfile} style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 32, height: 32, borderRadius: 10, background: '#fff',
+                  border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                }}>
+                  <Icon name="edit" size={16} color="#000" />
+                </button>
               </div>
-              <div style={{ fontSize: 13, color: FIT.primary, fontWeight: 800 }}>
-                {profile.targetKcal.toLocaleString()} {t.targetKcal}
-              </div>
-           </div>
-
-           <div style={{ height: 8, background: dark ? 'rgba(255,255,255,0.05)' : '#E2E8F0', borderRadius: 4, marginTop: 12, overflow: 'hidden' }}>
-              <div style={{ width: '45%', height: '100%', background: `linear-gradient(90deg, ${FIT.primary}, ${FIT.accent})`, borderRadius: 4 }} />
-           </div>
-        </Card>
-
-        {sections.map((s) => (
-          <div key={s.title} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, color: FIT.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, paddingLeft: 4 }}>
-              {s.title}
-            </div>
-            <div style={{ 
-              background: dark ? 'rgba(255,255,255,0.02)' : '#fff', borderRadius: 24, overflow: 'hidden',
-              border: `1px solid ${dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'}`,
-              boxShadow: FIT.shadowSm
-            }}>
-              {s.items.map((it, i) => (
-                <div
-                  key={it.name}
-                  onClick={it.onClick}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    padding: '16px 20px', width: '100%', background: 'transparent',
-                    border: 'none', cursor: it.onClick ? 'pointer' : 'default', textAlign: 'left',
-                    borderBottom: i < s.items.length - 1 ? `1px solid ${dark ? 'rgba(255,255,255,0.03)' : '#F1F5F9'}` : 'none',
-                    transition: 'background 0.2s'
-                  }}
-                >
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 12,
-                    background: dark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Icon name={it.icon} size={18} color={it.highlight ? FIT.primary : FIT.textMuted} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>
+                  {profile.name || t.name}
+                </div>
+                <div style={{ fontSize: 13, color: '#94A3B8', fontWeight: 600, marginTop: 4 }}>
+                  {profile.email || '...'}
+                </div>
+                <div style={{ display: 'flex', gap: 16, marginTop: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 16 }}>🔥</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{streak} {t.days}</span>
                   </div>
-                  <span style={{ fontSize: 15, fontWeight: 700, flex: 1, color: FIT.text }}>
-                    {it.name}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {it.toggle ? (
-                      <div 
-                        onClick={(e) => { e.stopPropagation(); it.onClick?.(); }}
-                        style={{ 
-                          width: 44, height: 24, borderRadius: 12, 
-                          background: it.active ? FIT.primary : (dark ? '#334155' : '#E2E8F0'), 
-                          position: 'relative', cursor: 'pointer',
-                          transition: 'all 0.3s'
-                        }}
-                      >
-                        <div style={{ 
-                          width: 18, height: 18, borderRadius: 9, background: '#fff', 
-                          position: 'absolute', 
-                          left: it.active ? 24 : 3, top: 3,
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }} />
-                      </div>
-                    ) : (
-                      <span style={{
-                        fontSize: 13,
-                        color: it.highlight ? FIT.primary : FIT.textMuted,
-                        fontWeight: 700,
-                      }}>
-                        {it.value}
-                      </span>
-                    )}
-                    {it.onClick && <Icon name="chevron" size={14} color={FIT.textSubtle} />}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 16 }}>🍽️</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{totalMeals.toLocaleString()} {t.meals}</span>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        ))}
+          </Card>
 
-        <button 
-          onClick={handleLogout}
-          style={{ 
-            width: '100%', height: 54, borderRadius: 18, fontSize: 15, fontWeight: 800, marginTop: 12, 
-            color: FIT.danger, border: 'none', background: dark ? 'rgba(239,68,68,0.1)' : '#FEF2F2',
-            cursor: 'pointer'
-          }}
-        >
-          {t.logout}
-        </button>
+          <Card variant="glass" pad={20} style={{ 
+            background: 'rgba(255,255,255,0.02)', 
+            border: '1px solid rgba(255,255,255,0.06)',
+            marginBottom: 24,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{t.goalWeight}</div>
+              <Icon name="trophy" size={18} color={FIT.cyan} />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
+              {profile.goal === 'lose' ? t.goal_lose : profile.goal === 'gain' ? t.goal_gain : t.goal_maintain}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 14 }}>
+              <div style={{ fontSize: 14, color: '#94A3B8', fontWeight: 700 }}>
+                {profile.weight}kg → {profile.goal === 'lose' ? profile.weight - 5 : profile.goal === 'gain' ? profile.weight + 5 : profile.weight}kg
+              </div>
+              <div style={{ fontSize: 14, color: FIT.cyan, fontWeight: 900 }}>
+                {profile.targetKcal.toLocaleString()} {t.kcal}/kun
+              </div>
+            </div>
+
+            <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, marginTop: 14, overflow: 'hidden' }}>
+              <div style={{ width: '45%', height: '100%', background: `linear-gradient(90deg, ${FIT.cyan}, ${FIT.lime})`, borderRadius: 4 }} />
+            </div>
+          </Card>
+
+          {sections.map((s) => (
+            <div key={s.title} style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingLeft: 4 }}>
+                {s.title}
+              </div>
+              <div style={{ 
+                background: 'rgba(255,255,255,0.03)', borderRadius: 24, overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(10px)',
+              }}>
+                {s.items.map((it, i) => (
+                  <div
+                    key={it.name}
+                    onClick={it.onClick}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 16,
+                      padding: '18px 20px', width: '100%', background: 'transparent',
+                      border: 'none', cursor: it.onClick ? 'pointer' : 'default', textAlign: 'left',
+                      borderBottom: i < s.items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      transition: 'background 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12,
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon name={it.icon} size={20} color={it.highlight ? FIT.cyan : '#94A3B8'} />
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 700, flex: 1, color: '#fff' }}>
+                      {it.name}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {it.toggle ? (
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); it.onClick?.(); }}
+                          style={{ 
+                            width: 48, height: 26, borderRadius: 13, 
+                            background: it.active ? FIT.cyan : 'rgba(255,255,255,0.1)', 
+                            position: 'relative', cursor: 'pointer',
+                            transition: 'all 0.3s'
+                          }}
+                        >
+                          <div style={{ 
+                            width: 20, height: 20, borderRadius: 10, background: '#fff', 
+                            position: 'absolute', 
+                            left: it.active ? 25 : 3, top: 3,
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                          }} />
+                        </div>
+                      ) : (
+                        <span style={{
+                          fontSize: 14,
+                          color: it.highlight ? FIT.cyan : '#64748B',
+                          fontWeight: 700,
+                        }}>
+                          {it.value}
+                        </span>
+                      )}
+                      {it.onClick && <Icon name="chevron" size={16} color="#475569" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <button 
+            onClick={handleLogout}
+            style={{ 
+              width: '100%', height: 58, borderRadius: 20, fontSize: 16, fontWeight: 800, marginTop: 12, 
+              color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.2)', background: 'rgba(255,77,77,0.05)',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1
+            }}
+          >
+            {t.logout}
+          </button>
+        </div>
       </div>
+
 
       {/* Tweaks Modal Overlay */}
       {showTweaks && (
