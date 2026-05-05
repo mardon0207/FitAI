@@ -499,7 +499,7 @@ const TONES: Record<Tone, { bg: string; fg: string }> = {
 
 export function FoodThumb({
   name, size = 48, emoji, tone = 'green', photo,
-}: { name?: string; size?: number; emoji?: string; tone?: Tone; photo?: string | null }) {
+}: { name?: string | null; size?: number; emoji?: string | null; tone?: Tone; photo?: string | null | undefined }) {
   const toneColors = TONES[tone];
   const [photoFailed, setPhotoFailed] = useState(false);
   const initials = name ? name.slice(0, 2).toUpperCase() : '··';

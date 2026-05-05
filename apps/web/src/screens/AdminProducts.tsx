@@ -114,7 +114,7 @@ export function AdminProductsScreen({ onBack }: { onBack: () => void }) {
             <div style={{ fontSize: 10, textTransform: 'uppercase', color: FIT.cyan, fontWeight: 800, marginBottom: 8, letterSpacing: 1 }}>Debug Session Data</div>
             <div style={{ fontSize: 13, fontFamily: FIT.mono, color: FIT.textMuted, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div>Email: <span style={{ color: '#fff' }}>{email}</span></div>
-              <div>Role: <span style={{ color: role === 'admin' ? FIT.cyan : FIT.danger }}>{role || 'null'}</span></div>
+              <div>Role: <span style={{ color: FIT.danger }}>{role || 'null'}</span></div>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export function AdminProductsScreen({ onBack }: { onBack: () => void }) {
             <div style={{ textAlign: 'center', padding: 40, color: FIT.textMuted }}>Loading products...</div>
           ) : foods?.map(food => (
             <Card key={food.id} pad={16} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <FoodThumb name={food.name} emoji={food.emoji} photo={food.photoUrl ?? undefined} size={50} />
+              <FoodThumb name={food.name} emoji={food.emoji} photo={food.photoUrl || undefined} size={50} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>{food.name}</div>
                 <div style={{ fontSize: 12, color: FIT.textMuted }}>{food.kcalPer100g} kcal · {food.category}</div>
@@ -279,7 +279,7 @@ function ProductEditor({ food, onClose, onSave }: { food: any, onClose: () => vo
       
       <div style={{ padding: 20, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div style={{ alignSelf: 'center', position: 'relative' }}>
-          <FoodThumb name={formData.name_uz} emoji={formData.emoji} photo={preview ?? undefined} size={100} />
+          <FoodThumb name={formData.name_uz} emoji={formData.emoji} photo={preview || undefined} size={100} />
           <label style={{ 
             position: 'absolute', bottom: -10, right: -10, width: 40, height: 40, borderRadius: 20,
             background: FIT.cyan, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
